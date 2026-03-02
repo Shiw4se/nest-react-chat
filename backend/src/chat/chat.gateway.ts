@@ -3,10 +3,11 @@ import { MessageBody, SubscribeMessage, WebSocketGateway,
 import{ Server, Socket } from "socket.io";
 import { PrismaService } from "../prisma/prisma.service";
 import { UseGuards } from "@nestjs/common";
-import { WsJwtGuard } from "src/auth/guards/ws-jwt.guard";
+import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 
 interface AuthPayload {
-  userId: string;
+
+  sub: string;
   username: string;
 }
 
@@ -57,12 +58,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket
 ) {
 
-    const { userId } = client.user;
+    const {sub: userId } = client.user;
+  console.log(client.user);
+    if(!userId) {
+      console.error("Unauthorized: No user ID found in socket");
+      return;
+    }
+    try{
     const savedMessage = await this.prisma.message.create({
       data: {
        message: data.message,
-       userId: userId,
         room: data.room,
+        user:{connect: { id: userId } }
       },
       include: {
         user: {
@@ -74,6 +81,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
     this.server.to(data.room).emit("newMessage", savedMessage);
     console.log(`Message saved and sent to room ${data.room}`);
+  } catch (error) {
+    console.error("Error saving message:", error);
+  }
 }
 }
 
