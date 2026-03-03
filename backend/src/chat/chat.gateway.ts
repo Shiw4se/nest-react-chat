@@ -1,12 +1,11 @@
-import { MessageBody, SubscribeMessage, WebSocketGateway,
-   WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from "@nestjs/websockets";
+import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from "@nestjs/websockets";
 import{ Server, Socket } from "socket.io";
-import { PrismaService } from "../prisma/prisma.service";
 import { UseGuards } from "@nestjs/common";
+
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
+import { PrismaService } from "../prisma/prisma.service";
 
 interface AuthPayload {
-
   sub: string;
   username: string;
 }
@@ -59,7 +58,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 ) {
 
     const {sub: userId } = client.user;
-  console.log(client.user);
     if(!userId) {
       console.error("Unauthorized: No user ID found in socket");
       return;
