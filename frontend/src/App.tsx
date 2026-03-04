@@ -1,14 +1,15 @@
-
-
+import { useAuthStore } from './store/useAuthStore';
+import { JoinForm } from './features/JoinForm';
+import { ChatRoom } from './features/ChatRoom'; 
 
 function App() {
+  const user = useAuthStore((state) => state.user);
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-blue-600">
-      
-      </h1>
+    <div className="min-h-screen bg-slate-900">
+      {!user ? <JoinForm /> : <ChatRoom />}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
