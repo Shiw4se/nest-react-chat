@@ -32,7 +32,7 @@ export const useJoinForm = () => {
         if (!formData.room) return setError('Room is required');
         await login(formData.username, formData.password, formData.room);
       }
-    } catch (err) {
+    } catch {
       setError(isRegisterMode ? 'Registration failed' : 'Login failed');
     }
   };
