@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { UserData } from '../types/auth'; 
-import axios from '../api/axios';
+import axios from '../api/axios'; 
 
 interface AuthState {
   user: UserData | null;
@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (username, password, room) => {
     try {
-      const res = await axios.post('http://localhost:3000/auth/login', {
+      const res = await axios.post('/auth/login', {
         username,
         password,
       });
@@ -45,7 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   register: async (username, password) => {
     try {
-      await axios.post('http://localhost:3000/auth/register', {
+      await axios.post('/auth/register', {
         username,
         password,
       });
