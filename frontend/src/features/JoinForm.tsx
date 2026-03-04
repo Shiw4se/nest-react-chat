@@ -1,42 +1,13 @@
-import React, { useState } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
+import React from 'react';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { useJoinForm } from '../hooks/useJoinForm';
 
 export const JoinForm: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [room, setRoom] = useState('');
-  
-  const [isRegisterMode, setIsRegisterMode] = useState(false); 
-  const [error, setError] = useState('');
-
-  const login = useAuthStore((state) => state.login);
-  const register = useAuthStore((state) => state.register);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    try {
-      if (isRegisterMode) {
-        await register(username, password);
-        alert('Registration successful! Please log in.');
-        setIsRegisterMode(false); 
-      } else {
-        if (!room) {
-          setError('Room is required for login');
-          return;
-        }
-        await login(username, password, room);
-      }
-    } catch (err) {
-      setError(isRegisterMode ? 'Registration failed. Username might be taken.' : 'Login failed. Check credentials.');
-    }
-  };
+  const { formData, isRegisterMode, error, handleChange, handleSubmit, toggleMode } = useJoinForm();
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-900 font-sans">
+    <div className="flex items-center justify-center min-h-screen bg-slate-900 font-sans text-slate-200">
       <form 
         onSubmit={handleSubmit} 
         className="bg-slate-800 p-8 rounded-2xl shadow-xl w-96 border border-slate-700"
@@ -53,26 +24,27 @@ export const JoinForm: React.FC = () => {
 
         <div className="space-y-4">
           <Input
-            type="text"
+            name="username" 
             placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={formData.username}
+            onChange={handleChange}
             required
           />
           <Input
+            name="password"
             type="password"
             placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={handleChange}
             required
           />
           
           {!isRegisterMode && (
             <Input
-              type="text"
+              name="room"
               placeholder="Room Name"
-              value={room}
-              onChange={(e) => setRoom(e.target.value)}
+              value={formData.room}
+              onChange={handleChange}
               required
             />
           )}
@@ -84,14 +56,7 @@ export const JoinForm: React.FC = () => {
 
         <p className="mt-6 text-center text-sm text-slate-400">
           {isRegisterMode ? 'Already have an account? ' : "Don't have an account? "}
-          <Button
-            type="button"
-            variant="text"
-            onClick={() => {
-              setIsRegisterMode(!isRegisterMode);
-              setError('');
-            }}
-          >
+          <Button type="button" variant="text" onClick={toggleMode}>
             {isRegisterMode ? 'Log In' : 'Sign Up'}
           </Button>
         </p>
