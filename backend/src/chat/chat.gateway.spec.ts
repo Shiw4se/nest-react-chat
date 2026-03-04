@@ -23,6 +23,10 @@ describe('ChatGateway', () => {
   const mockAuthenticatedSocket = {
     id: 'test-socket-id',
     user: { sub: 'user-123', username: 'Andrew' }, 
+    handshake:{
+      auth:{token: 'mock-token'},
+      headers:{authorization:'Bearer mock-token'}
+    },
     join: jest.fn(),
     to: jest.fn().mockReturnThis(),
     emit: jest.fn(),
@@ -35,7 +39,8 @@ describe('ChatGateway', () => {
         ChatGateway,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService,
-             useValue: { verify: jest.fn(), sign: jest.fn() }
+             useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
+              sign: jest.fn() }
         },
       ],
     }).compile();
