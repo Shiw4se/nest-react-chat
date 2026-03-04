@@ -39,7 +39,8 @@ describe('ChatGateway', () => {
         ChatGateway,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService,
-             useValue: { verify: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
+             useValue: { verify: jest.fn(),
+              verifyAsync: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
               sign: jest.fn() }
         },
       ],
