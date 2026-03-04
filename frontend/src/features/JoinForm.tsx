@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 export const JoinForm: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -50,54 +52,48 @@ export const JoinForm: React.FC = () => {
         )}
 
         <div className="space-y-4">
-          <input
+          <Input
             type="text"
             placeholder="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-slate-500 transition-all"
             required
           />
-          <input
+          <Input
             type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-slate-500 transition-all"
             required
           />
           
           {!isRegisterMode && (
-            <input
+            <Input
               type="text"
               placeholder="Room Name"
               value={room}
               onChange={(e) => setRoom(e.target.value)}
-              className="w-full p-3 bg-slate-900 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-slate-500 transition-all"
               required
             />
           )}
 
-          <button 
-            type="submit" 
-            className="w-full p-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-95 mt-2"
-          >
+          <Button type="submit" className="w-full mt-2">
             {isRegisterMode ? 'Sign Up' : 'Join Room'}
-          </button>
+          </Button>
         </div>
 
         <p className="mt-6 text-center text-sm text-slate-400">
           {isRegisterMode ? 'Already have an account? ' : "Don't have an account? "}
-          <button
+          <Button
             type="button"
+            variant="text"
             onClick={() => {
               setIsRegisterMode(!isRegisterMode);
               setError('');
             }}
-            className="text-blue-400 hover:text-blue-300 font-medium hover:underline"
           >
             {isRegisterMode ? 'Log In' : 'Sign Up'}
-          </button>
+          </Button>
         </p>
       </form>
     </div>
