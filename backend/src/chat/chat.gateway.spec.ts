@@ -59,7 +59,7 @@ describe('ChatGateway', () => {
   describe('handleConnection / handleDisconnect', () => {
     it('should log on connection', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      gateway.handleConnection(mockAuthenticatedSocket as any);
+      await gateway.handleConnection(mockAuthenticatedSocket as any);
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Client connected'));
       consoleSpy.mockRestore();
     });
