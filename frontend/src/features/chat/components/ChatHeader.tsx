@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../../../components/ui/Button';
 import { useChatStore } from '../../../store/useChatStore';
+import { useTranslation } from 'react-i18next'; 
 
 interface Props {
   room: string;
@@ -8,9 +9,15 @@ interface Props {
   onLeave: () => void;
 }
 
+
 export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
+  const { t, i18n } = useTranslation();
   const isConnected = useChatStore((state) => state.isConnected);
   const isReconnecting = useChatStore((state) => state.isReconnecting);
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <header className="flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700 shadow-sm z-10">
@@ -26,21 +33,42 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
         
         <div>
           <h2 className="text-xl font-bold text-white leading-tight">
-            Room: <span className="text-blue-400">{room}</span>
+            {t('chat.title')} 
           </h2>
           <p className="text-xs text-slate-400">
-            {isConnected ? `Connected as ${username}` : isReconnecting ? 'Reconnecting...' : 'Disconnected'}
+            {t('chat.room')}: <span className="text-blue-400">{room}</span> | 
+            {isConnected 
+              ? ` ${t('chat.connected_as')} ${username}` 
+              : isReconnecting ? ` ${t('chat.reconnecting')}` : ` ${t('chat.disconnected')}`}
           </p>
         </div>
       </div>
-      
-      <Button 
-        onClick={onLeave} 
-        variant="danger" 
-        className="text-xs px-3 py-1.5"
-      >
-        Leave
-      </Button>
+
+      <div className="flex items-center gap-4">
+        <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700">
+          {['en', 'ua', 'pl', 'jp'].map((lang) => (
+            <button
+              key={lang}
+              onClick={() => changeLanguage(lang)}
+              className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
+                i18n.language === lang 
+                  ? 'bg-blue-600 text-white' 
+                  : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              {lang.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <Button 
+          onClick={onLeave} 
+          variant="danger" 
+          className="text-xs px-3 py-1.5"
+        >
+          {t('chat.leave')}
+        </Button>
+      </div>
     </header>
   );
 };

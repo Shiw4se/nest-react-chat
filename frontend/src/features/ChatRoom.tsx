@@ -9,8 +9,10 @@ import { Button } from '../components/ui/Button';
 import { MessageBubble } from '../components/ui/MessageBubble';
 import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
+import { useTranslation } from 'react-i18next'; 
 
 export const ChatRoom: React.FC = () => {
+  const { t } = useTranslation(); 
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.clearAuth);
   const { messages, typingUsers, clearMessages } = useChatStore();
@@ -46,7 +48,7 @@ export const ChatRoom: React.FC = () => {
       <main className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-slate-500">
-            No messages yet. Be the first to say hello!
+            {t('chat.no_messages')} 
           </div>
         ) : (
           messages.map((msg, index) => (
@@ -65,10 +67,12 @@ export const ChatRoom: React.FC = () => {
               setInputText(e.target.value);
               handleTyping();
             }}
-            placeholder="Type a message..."
+            placeholder={t('chat.placeholder')} 
             className="flex-1"
           />
-          <Button type="submit" disabled={!inputText.trim()} className="px-6 py-3">Send</Button>
+          <Button type="submit" disabled={!inputText.trim()} className="px-6 py-3">
+            {t('chat.send')} 
+          </Button>
         </form>
       </footer>
     </div>

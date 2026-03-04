@@ -1,0 +1,13 @@
+{
+  "chat": {
+    "title": "litslink Chat",
+    "leave": "Leave",
+    "room": "Room",
+    "connected_as": "Connected as",
+    "reconnecting": "Reconnecting...",
+    "disconnected": "Disconnected",
+    "send": "Send",
+    "placeholder": "Type a message...",
+    "no_messages": "No messages yet. Be the first to say hello!"
+  }
+}
