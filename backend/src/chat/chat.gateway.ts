@@ -87,4 +87,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.error("Error saving message:", error);
     }
   }
+  @SubscribeMessage("typing")
+  handleTyping(
+    @MessageBody() data: { room: string; isTyping: boolean },
+    @ConnectedSocket() client: AuthenticatedSocket
+  ) {
+    const { username } = client.user;
+    
+    client.to(data.room).emit("userTyping", { 
+      username, 
+      isTyping: data.isTyping 
+    });
+  }
 }

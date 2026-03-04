@@ -14,10 +14,13 @@ export const ChatRoom: React.FC = () => {
   const setMessages = useChatStore((state) => state.setMessages);
   const clearMessages = useChatStore((state) => state.clearMessages);
 
+  const typingUsers = useChatStore((state) => state.typingUsers);
+  const setTyping = useChatStore((state) => state.setTyping);
+const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll logic
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -26,7 +29,6 @@ export const ChatRoom: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Fetch history and handle socket subscriptions
   useEffect(() => {
     if (!user) return;
 
@@ -43,18 +45,35 @@ export const ChatRoom: React.FC = () => {
 
     fetchHistory();
 
-    // Join the specific room
     socket.emit('join', { room: user.room, username: user.username });
 
-    // Listen for incoming messages
     socket.on('newMessage', (message: ChatMessage) => {
       addMessage(message);
     });
 
+    socket.on('userTyping', ({ username, isTyping }) => {
+      setTyping(username, isTyping);
+    });
+
     return () => {
       socket.off('newMessage');
+      socket.off('userTyping');
     };
-  }, [user, setMessages, addMessage]);
+  }, [user, setMessages, addMessage, setTyping]);
+
+  const handleTypingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputText(e.target.value);
+
+    if (!user) return;
+
+    socket.emit('typing', { room: user.room, isTyping: true });
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit('typing', { room: user.room, isTyping: false });
+    }, 1500);
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +84,7 @@ export const ChatRoom: React.FC = () => {
       message: inputText,
     });
 
+    socket.emit('typing', { room: user.room, isTyping: false });
     setInputText('');
   };
 
@@ -118,12 +138,18 @@ export const ChatRoom: React.FC = () => {
         <div ref={messagesEndRef} />
       </main>
 
-      <footer className="p-4 bg-slate-800 border-t border-slate-700">
+      <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
+        {typingUsers.length > 0 && (
+          <div className="absolute -top-6 left-4 text-xs text-slate-400 italic transition-opacity duration-300">
+            {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+          </div>
+        )}
+        
         <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
           <input
             type="text"
             value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
+            onChange={handleTypingChange}
             placeholder="Type a message..."
             className="flex-1 p-3 bg-slate-900 border border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-white placeholder:text-slate-500 transition-all"
           />
