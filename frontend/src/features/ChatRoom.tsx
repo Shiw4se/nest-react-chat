@@ -32,6 +32,9 @@ const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!user) return;
 
+    socket.auth = { token: localStorage.getItem('token') };
+    socket.connect();
+
     const fetchHistory = async () => {
       try {
         const res = await axios.get(`http://localhost:3000/messages/${user.room}`, {
