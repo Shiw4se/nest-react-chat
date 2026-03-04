@@ -7,22 +7,37 @@ import type { UserData } from '../types/auth';
 import type { ChatMessage } from '../types/chat';
 
 export const useChatSocket = (user: UserData | null) => {
-  const { addMessage, setMessages, setTyping } = useChatStore();
+  const { addMessage, setMessages, setTyping , setIsConnected, setIsReconnecting } = useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // 1. Connection logic
     socket.auth = { token: localStorage.getItem('token') };
     socket.connect();
 
-    // 2. Fetch history
+    socket.on('connect', () => {
+      setIsConnected(true);
+      setIsReconnecting(false);
+      socket.emit(SOCKET_EVENTS.JOIN, { room: user.room, username: user.username });
+    });
+
+    socket.on('disconnect', (reason) => {
+      setIsConnected(false);
+      if (reason === 'io server disconnect') {
+        socket.connect();
+      }
+    });
+
+    socket.on('connect_error', () => {
+      setIsConnected(false);
+      setIsReconnecting(true);
+    });
+
     messagesService.getHistory(user.room)
       .then(setMessages)
       .catch(console.error);
 
-    // 3. Socket listeners
     socket.emit(SOCKET_EVENTS.JOIN, { room: user.room, username: user.username });
 
     socket.on(SOCKET_EVENTS.NEW_MESSAGE, (message: ChatMessage) => {
@@ -34,10 +49,13 @@ export const useChatSocket = (user: UserData | null) => {
     });
 
     return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
       socket.off(SOCKET_EVENTS.NEW_MESSAGE);
       socket.off(SOCKET_EVENTS.USER_TYPING);
     };
-  }, [user, addMessage, setMessages, setTyping]);
+  }, [user, addMessage, setMessages, setTyping, setIsConnected, setIsReconnecting]);
 
   const sendMessage = (text: string) => {
     if (!user) return;

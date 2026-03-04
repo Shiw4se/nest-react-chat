@@ -4,6 +4,10 @@ import type { ChatMessage } from '../types/chat';
 interface ChatState {
   messages: ChatMessage[];
   typingUsers: string[]; 
+  isConnected: boolean;
+  isReconnecting: boolean;
+  setIsConnected: (status: boolean) => void;
+  setIsReconnecting: (status: boolean) => void;
   addMessage: (msg: ChatMessage) => void;
   setMessages: (msgs: ChatMessage[]) => void;
   setTyping: (username: string, isTyping: boolean) => void; 
@@ -24,6 +28,11 @@ export const useChatStore = create<ChatState>((set) => ({
       return { typingUsers: state.typingUsers.filter((u) => u !== username) };
     }
   }),
+  
+  isConnected: false,
+  isReconnecting: false,
+  setIsConnected: (status) => set({ isConnected: status }),
+  setIsReconnecting: (status) => set({ isReconnecting: status }),
 
   clearMessages: () => set({ messages: [], typingUsers: [] }),
 }));
