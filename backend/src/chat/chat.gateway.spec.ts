@@ -26,6 +26,7 @@ describe('ChatGateway', () => {
     join: jest.fn(),
     to: jest.fn().mockReturnThis(),
     emit: jest.fn(),
+    disconnect: jest.fn(),
   } as any;
 
   beforeEach(async () => {
