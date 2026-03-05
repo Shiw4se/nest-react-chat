@@ -32,7 +32,10 @@ describe('MessagesController', () => {
       const mockResult = [{ id: '1', content: 'test', room }];
       mockMessagesService.getMessagesForRoom.mockResolvedValue(mockResult);
 
-      const result = await controller.getRoomMessages(room);
+      const result = await controller.getRoomMessages(
+        { room },
+        { cursor: undefined, limit: 50 }
+      );
 
       expect(result).toEqual(mockResult);
       expect(service.getMessagesForRoom).toHaveBeenCalledWith(room, undefined, 50);
