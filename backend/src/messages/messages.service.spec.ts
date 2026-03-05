@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { take } from 'rxjs';
 
 describe('MessagesService', () => {
   let messagesService: MessagesService;
@@ -43,10 +44,12 @@ describe('MessagesService', () => {
       const result = await messagesService.getMessagesForRoom('general');
 
       expect(result).toEqual(mockMessagesList);
-      
+
       expect(prismaService.message.findMany).toHaveBeenCalledWith({
+        take: 50,
+        skip: 0,
         where: { room: 'general' },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         include: { user: { select: { username: true } } },
       });
     });

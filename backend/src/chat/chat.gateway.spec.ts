@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {JwtService} from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { ChatGateway } from './chat.gateway';
 import { PrismaService } from '../prisma/prisma.service';
 import { Server, Socket } from 'socket.io';
@@ -22,10 +22,10 @@ describe('ChatGateway', () => {
 
   const mockAuthenticatedSocket = {
     id: 'test-socket-id',
-    user: { sub: 'user-123', username: 'Andrew' }, 
-    handshake:{
-      auth:{token: 'mock-token'},
-      headers:{authorization:'Bearer mock-token'}
+    user: { sub: 'user-123', username: 'Andrew' },
+    handshake: {
+      auth: { token: 'mock-token' },
+      headers: { authorization: 'Bearer mock-token' }
     },
     join: jest.fn(),
     to: jest.fn().mockReturnThis(),
@@ -38,17 +38,20 @@ describe('ChatGateway', () => {
       providers: [
         ChatGateway,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: JwtService,
-             useValue: { verify: jest.fn(),
-              verifyAsync: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
-              sign: jest.fn() }
+        {
+          provide: JwtService,
+          useValue: {
+            verify: jest.fn(),
+            verifyAsync: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
+            sign: jest.fn()
+          }
         },
       ],
     }).compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
     prismaService = module.get<PrismaService>(PrismaService);
-    
+
     gateway.server = mockServer as any;
   });
 
@@ -75,12 +78,12 @@ describe('ChatGateway', () => {
   describe('HandleJoinRoom', () => {
     it('should join the room and emit "User Joined"', () => {
       const data = { room: 'general', username: 'Andrew' };
-      
+
       gateway.HandleJoinRoom(data, mockAuthenticatedSocket);
 
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('general');
       expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('general');
-      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('User Joined', {
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('userJoined', {
         message: 'User Andrew has joined room',
       });
     });

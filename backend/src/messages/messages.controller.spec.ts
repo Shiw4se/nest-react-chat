@@ -35,7 +35,7 @@ describe('MessagesController', () => {
       const result = await controller.getRoomMessages(room);
 
       expect(result).toEqual(mockResult);
-      expect(service.getMessagesForRoom).toHaveBeenCalledWith(room);
+      expect(service.getMessagesForRoom).toHaveBeenCalledWith(room, undefined, 50);
     });
   });
 });
