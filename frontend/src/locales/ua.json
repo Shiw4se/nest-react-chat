@@ -1,13 +1,26 @@
 {
   "chat": {
-    "title": "litslink Чат",
-    "leave": "Вийти",
+    "title": "Чат-кімната",
     "room": "Кімната",
     "connected_as": "Підключено як",
     "reconnecting": "Перепідключення...",
     "disconnected": "Відключено",
-    "send": "Надіслати",
+    "leave": "Вийти",
+    "no_messages": "Повідомлень ще немає. Почніть спілкування!",
     "placeholder": "Введіть повідомлення...",
-    "no_messages": "Повідомлень ще немає. Станьте першим!"
+    "send": "Надіслати"
+  },
+  "auth": {
+    "create_account": "Створити акаунт",
+    "join_chat": "Увійти в чат",
+    "username": "Ім'я користувача",
+    "password": "Пароль",
+    "room": "Назва кімнати",
+    "sign_up_btn": "Зареєструватися",
+    "join_room_btn": "Увійти в кімнату",
+    "already_have_account": "Вже є акаунт? ",
+    "dont_have_account": "Немає акаунту? ",
+    "log_in_link": "Увійти",
+    "sign_up_link": "Зареєструватися"
   }
 }

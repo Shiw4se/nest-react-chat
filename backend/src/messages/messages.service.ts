@@ -1,25 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service'; 
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async getMessagesForRoom(room: string) {
-    return this.prisma.message.findMany({
+  async getMessagesForRoom(room: string, cursor?: string, limit: number = 50) {
+    const messages = await this.prisma.message.findMany({
+      take: limit,
+      skip: cursor ? 1 : 0,
+      ...(cursor && { cursor: { id: cursor } }),
       where: {
         room: room,
       },
       orderBy: {
-        createdAt: 'asc', 
+        createdAt: 'desc',
       },
       include: {
         user: {
           select: {
-            username: true, 
+            username: true,
           },
         },
       },
     });
+
+    return messages.reverse();
   }
 }

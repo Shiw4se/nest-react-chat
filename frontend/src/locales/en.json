@@ -1,13 +1,26 @@
 {
   "chat": {
-    "title": "litslink Chat",
-    "leave": "Leave",
+    "title": "Chat Room",
     "room": "Room",
     "connected_as": "Connected as",
     "reconnecting": "Reconnecting...",
     "disconnected": "Disconnected",
-    "send": "Send",
+    "leave": "Leave",
+    "no_messages": "No messages yet. Start the conversation!",
     "placeholder": "Type a message...",
-    "no_messages": "No messages yet. Be the first to say hello!"
+    "send": "Send"
+  },
+  "auth": {
+    "create_account": "Create Account",
+    "join_chat": "Join Chat",
+    "username": "Username",
+    "password": "Password",
+    "room": "Room Name",
+    "sign_up_btn": "Sign Up",
+    "join_room_btn": "Join Room",
+    "already_have_account": "Already have an account? ",
+    "dont_have_account": "Don't have an account? ",
+    "log_in_link": "Log In",
+    "sign_up_link": "Sign Up"
   }
 }

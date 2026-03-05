@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import type { UserData } from '../types/auth'; 
-import axios from '../api/axios'; 
+import { persist } from 'zustand/middleware';
+import { authApi } from '../api/services/authApi';
+import type { UserData } from '../types/auth';
 
 interface AuthState {
   user: UserData | null;
@@ -11,47 +12,30 @@ interface AuthState {
   clearAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: localStorage.getItem('token'), 
-  
-  setAuth: (user, token) => {
-    localStorage.setItem('token', token);
-    set({ user, token });
-  },
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
 
-  login: async (username, password, room) => {
-    try {
-      const res = await axios.post('/auth/login', {
-        username,
-        password,
-      });
-      
-      const token = res.data.access_token;
-      const user = { username, room } as UserData;
-      
-      localStorage.setItem('token', token);
-      set({ user, token });
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  },
-  
-  clearAuth: () => {
-    localStorage.removeItem('token');
-    set({ user: null, token: null });
-  },
+      setAuth: (user, token) => set({ user, token }),
 
-  register: async (username, password) => {
-    try {
-      await axios.post('/auth/register', {
-        username,
-        password,
-      });
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
-    }
-  },
-}));
+      login: async (username, password, room) => {
+        const data = await authApi.login(username, password);
+        const token = data.access_token;
+        const user = { username, room } as UserData;
+
+        set({ user, token });
+      },
+
+      register: async (username, password) => {
+        await authApi.register(username, password);
+      },
+
+      clearAuth: () => set({ user: null, token: null }),
+    }),
+    {
+      name: 'auth-storage',
+    },
+  ),
+);

@@ -1,13 +1,26 @@
 {
   "chat": {
-    "title": "litslink Czat",
-    "leave": "Wyjdź",
+    "title": "Pokój czatu",
     "room": "Pokój",
-    "connected_as": "Połączony jako",
+    "connected_as": "Połączono jako",
     "reconnecting": "Ponowne łączenie...",
-    "disconnected": "Rozłączono",
-    "send": "Wyślij",
+    "disconnected": "Odłączono",
+    "leave": "Opuść",
+    "no_messages": "Brak wiadomości. Rozpocznij rozmowę!",
     "placeholder": "Wpisz wiadomość...",
-    "no_messages": "Brak wiadomości. Bądź pierwszy!"
+    "send": "Wyślij"
+  },
+  "auth": {
+    "create_account": "Utwórz konto",
+    "join_chat": "Dołącz do czatu",
+    "username": "Nazwa użytkownika",
+    "password": "Hasło",
+    "room": "Nazwa pokoju",
+    "sign_up_btn": "Zarejestruj się",
+    "join_room_btn": "Dołącz do pokoju",
+    "already_have_account": "Masz już konto? ",
+    "dont_have_account": "Nie masz konta? ",
+    "log_in_link": "Zaloguj się",
+    "sign_up_link": "Zarejestruj się"
   }
 }

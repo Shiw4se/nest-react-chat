@@ -12,10 +12,10 @@ describe('Input Component', () => {
   it('allows the user to type text', async () => {
     const user = userEvent.setup();
     render(<Input placeholder="Test input" />);
-    
+
     const input = screen.getByPlaceholderText('Test input');
     await user.type(input, 'My new message');
-    
+
     expect(input).toHaveValue('My new message');
   });
 });

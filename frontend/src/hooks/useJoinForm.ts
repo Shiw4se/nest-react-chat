@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const useJoinForm = () => {
@@ -26,14 +27,16 @@ export const useJoinForm = () => {
     try {
       if (isRegisterMode) {
         await register(formData.username, formData.password);
-        alert('Registration successful! Please log in.');
+        toast.success('Registration successful! Please log in.');
         setIsRegisterMode(false);
       } else {
         if (!formData.room) return setError('Room is required');
         await login(formData.username, formData.password, formData.room);
       }
     } catch {
-      setError(isRegisterMode ? 'Registration failed' : 'Login failed');
+      const errorMessage = isRegisterMode ? 'Registration failed' : 'Login failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 

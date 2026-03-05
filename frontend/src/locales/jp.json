@@ -1,13 +1,26 @@
 {
   "chat": {
-    "title": "litslink Czat",
-    "leave": "Wyjdź",
-    "room": "Pokój",
-    "connected_as": "Połączony jako",
-    "reconnecting": "Ponowne łączenie...",
-    "disconnected": "Rozłączono",
-    "send": "Wyślij",
-    "placeholder": "Wpisz wiadomość...",
-    "no_messages": "Brak wiadomości. Bądź pierwszy!"
+    "title": "チャットルーム",
+    "room": "ルーム",
+    "connected_as": "接続者:",
+    "reconnecting": "再接続中...",
+    "disconnected": "切断されました",
+    "leave": "退出する",
+    "no_messages": "まだメッセージはありません。会話を始めましょう！",
+    "placeholder": "メッセージを入力...",
+    "send": "送信"
+  },
+  "auth": {
+    "create_account": "アカウント作成",
+    "join_chat": "チャットに参加",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "room": "ルーム名",
+    "sign_up_btn": "サインアップ",
+    "join_room_btn": "ルームに参加",
+    "already_have_account": "すでにアカウントをお持ちですか？ ",
+    "dont_have_account": "アカウントをお持ちではありませんか？ ",
+    "log_in_link": "ログイン",
+    "sign_up_link": "サインアップ"
   }
 }

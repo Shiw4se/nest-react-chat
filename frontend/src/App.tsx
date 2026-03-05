@@ -1,12 +1,14 @@
+import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/useAuthStore';
 import { JoinForm } from './features/JoinForm';
-import { ChatRoom } from './features/ChatRoom'; 
+import { ChatRoom } from './features/ChatRoom';
 
 function App() {
   const user = useAuthStore((state) => state.user);
 
   return (
     <div className="min-h-screen bg-slate-900">
+      <Toaster position="top-right" />
       {!user ? <JoinForm /> : <ChatRoom />}
     </div>
   );

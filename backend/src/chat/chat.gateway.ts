@@ -2,6 +2,7 @@ import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGat
 import { Server, Socket } from "socket.io";
 import { JwtService } from '@nestjs/jwt'; 
 import { PrismaService } from "../prisma/prisma.service";
+import { ChatEvents } from "./enums/chat-events.enum"; 
 
 interface AuthPayload {
   sub: string;
@@ -52,7 +53,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  @SubscribeMessage("join")
+  @SubscribeMessage(ChatEvents.JOIN)
   HandleJoinRoom(
     @MessageBody() data: {room: string, username: string}, 
     @ConnectedSocket() client: AuthenticatedSocket
@@ -60,10 +61,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { username } = client.user;
     client.join(data.room);
     console.log(`${username} joined room ${data.room}`);
-    client.to(data.room).emit("User Joined", { message: `User ${username} has joined room` });
+    
+    client.to(data.room).emit(ChatEvents.USER_JOINED, { message: `User ${username} has joined room` });
   }
     
-  @SubscribeMessage("SendMessage")
+  @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
     @MessageBody() data: {room: string, message: string}, 
     @ConnectedSocket() client: AuthenticatedSocket
@@ -81,20 +83,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           user: { select: { username: true } }
         },
       });
-      this.server.to(data.room).emit("newMessage", savedMessage);
+      
+      this.server.to(data.room).emit(ChatEvents.NEW_MESSAGE, savedMessage);
       console.log(`Message saved and sent to room ${data.room}`);
     } catch (error) {
       console.error("Error saving message:", error);
     }
   }
-  @SubscribeMessage("typing")
+
+  @SubscribeMessage(ChatEvents.TYPING)
   handleTyping(
     @MessageBody() data: { room: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket
   ) {
     const { username } = client.user;
     
-    client.to(data.room).emit("userTyping", { 
+    client.to(data.room).emit(ChatEvents.USER_TYPING, { 
       username, 
       isTyping: data.isTyping 
     });

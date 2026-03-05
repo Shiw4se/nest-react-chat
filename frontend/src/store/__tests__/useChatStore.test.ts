@@ -3,19 +3,19 @@ import { useChatStore } from '../useChatStore';
 
 describe('useChatStore', () => {
   beforeEach(() => {
-    useChatStore.setState({ 
-      messages: [], 
-      typingUsers: [], 
-      isConnected: false, 
-      isReconnecting: false 
+    useChatStore.setState({
+      messages: [],
+      typingUsers: [],
+      isConnected: false,
+      isReconnecting: false,
     });
   });
 
   it('should add a new message to the state', () => {
-    const mockMessage = { message: 'Hello team', user: { username: 'Andrew' } }; 
-    
+    const mockMessage = { message: 'Hello team', user: { username: 'Andrew' } };
+
     useChatStore.getState().addMessage(mockMessage as any);
-    
+
     const state = useChatStore.getState();
     expect(state.messages).toHaveLength(1);
     expect(state.messages[0].message).toBe('Hello team');

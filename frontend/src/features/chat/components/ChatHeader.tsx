@@ -1,7 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { Button } from '../../../components/ui/Button';
 import { useChatStore } from '../../../store/useChatStore';
-import { useTranslation } from 'react-i18next'; 
+
+const SUPPORTED_LANGUAGES = ['en', 'ua', 'pl', 'jp'];
 
 interface Props {
   room: string;
@@ -9,14 +12,21 @@ interface Props {
   onLeave: () => void;
 }
 
-
 export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
   const { t, i18n } = useTranslation();
   const isConnected = useChatStore((state) => state.isConnected);
   const isReconnecting = useChatStore((state) => state.isReconnecting);
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
+  const getStatusColor = () => {
+    if (isConnected) return 'bg-green-500';
+    if (isReconnecting) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
+  const getStatusText = () => {
+    if (isConnected) return ` ${t('chat.connected_as')} ${username}`;
+    if (isReconnecting) return ` ${t('chat.reconnecting')}`;
+    return ` ${t('chat.disconnected')}`;
   };
 
   return (
@@ -26,33 +36,26 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
           {isReconnecting && (
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
           )}
-          <span className={`relative inline-flex rounded-full h-3 w-3 ${
-            isConnected ? 'bg-green-500' : isReconnecting ? 'bg-yellow-500' : 'bg-red-500'
-          }`}></span>
+          <span className={`relative inline-flex rounded-full h-3 w-3 ${getStatusColor()}`}></span>
         </div>
-        
+
         <div>
-          <h2 className="text-xl font-bold text-white leading-tight">
-            {t('chat.title')} 
-          </h2>
+          <h2 className="text-xl font-bold text-white leading-tight">{t('chat.title')}</h2>
           <p className="text-xs text-slate-400">
-            {t('chat.room')}: <span className="text-blue-400">{room}</span> | 
-            {isConnected 
-              ? ` ${t('chat.connected_as')} ${username}` 
-              : isReconnecting ? ` ${t('chat.reconnecting')}` : ` ${t('chat.disconnected')}`}
+            {t('chat.room')}: <span className="text-blue-400">{room}</span> |{getStatusText()}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700">
-          {['en', 'ua', 'pl', 'jp'].map((lang) => (
+          {SUPPORTED_LANGUAGES.map((lang) => (
             <button
               key={lang}
-              onClick={() => changeLanguage(lang)}
+              onClick={() => i18n.changeLanguage(lang)}
               className={`px-2 py-1 rounded-md text-[10px] font-bold transition-all ${
-                i18n.language === lang 
-                  ? 'bg-blue-600 text-white' 
+                i18n.language === lang
+                  ? 'bg-blue-600 text-white'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
             >
@@ -61,11 +64,7 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
           ))}
         </div>
 
-        <Button 
-          onClick={onLeave} 
-          variant="danger" 
-          className="text-xs px-3 py-1.5"
-        >
+        <Button onClick={onLeave} variant="danger" className="text-xs px-3 py-1.5">
           {t('chat.leave')}
         </Button>
       </div>
