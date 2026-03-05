@@ -1,23 +1,32 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { loadEnv } from 'vite';
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    proxy: {
-      '/auth': {
-        target: 'http://localhost:3000', // Redirect to backend API
-        changeOrigin: true,
-      },
-      '/socket.io': { // Redirect Socket.IO connection
-        target: 'ws://localhost:3000',
-        ws: true,
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+
+  const target = env.VITE_API_URL;
+
+  const wsTarget = target.replace(/^http/, 'ws');
+
+  return {
+    plugins: [react()],
+    server: {
+      proxy: {
+        '/auth': {
+          target: target,
+          changeOrigin: true,
+        },
+        '/socket.io': {
+          target: wsTarget,
+          ws: true,
+        },
       },
     },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
-  },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/setupTests.ts',
+    },
+  };
 });
