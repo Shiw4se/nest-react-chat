@@ -30,6 +30,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMe, onD
         )}
 
         <div
+          data-testid="message-bubble"
           className={`px-4 py-2 rounded-2xl max-w-sm break-words relative z-0 ${isMe
             ? 'bg-blue-600 text-white rounded-br-none'
             : 'bg-slate-700 text-slate-200 rounded-bl-none'
