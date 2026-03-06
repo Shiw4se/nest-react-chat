@@ -27,4 +27,24 @@ export class MessagesService {
 
     return messages.reverse();
   }
+
+  async deleteMessage(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new Error('Message not found');
+    }
+
+    if (message.userId !== userId) {
+      throw new Error('You can only delete your own messages');
+    }
+
+    await this.prisma.message.delete({
+      where: { id: messageId },
+    });
+
+    return messageId;
+  }
 }

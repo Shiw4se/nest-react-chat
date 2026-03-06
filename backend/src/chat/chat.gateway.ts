@@ -1,8 +1,9 @@
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
-import { JwtService } from '@nestjs/jwt'; 
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from "../prisma/prisma.service";
-import { ChatEvents } from "./enums/chat-events.enum"; 
+import { ChatEvents } from "./enums/chat-events.enum";
+import { MessagesService } from "../messages/messages.service";
 
 interface AuthPayload {
   sub: string;
@@ -13,7 +14,7 @@ interface AuthenticatedSocket extends Socket {
   user: AuthPayload;
 }
 
-@WebSocketGateway({ 
+@WebSocketGateway({
   cors: {
     origin: "*",
     credentials: true,
@@ -25,8 +26,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService
-  ) {}
+    private readonly jwtService: JwtService,
+    private readonly messagesService: MessagesService,
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -41,11 +43,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       (client as AuthenticatedSocket).user = payload;
-      
+
       console.log(`Client authenticated: ${payload.username} (${client.id})`);
     } catch (error) {
       console.error(`Connection rejected for ${client.id}: ${error.message}`);
-      client.disconnect(); 
+      client.disconnect();
     }
   }
 
@@ -55,23 +57,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.JOIN)
   HandleJoinRoom(
-    @MessageBody() data: {room: string, username: string}, 
+    @MessageBody() data: { room: string, username: string },
     @ConnectedSocket() client: AuthenticatedSocket
   ): void {
     const { username } = client.user;
     client.join(data.room);
     console.log(`${username} joined room ${data.room}`);
-    
+
     client.to(data.room).emit(ChatEvents.USER_JOINED, { message: `User ${username} has joined room` });
   }
-    
+
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
-    @MessageBody() data: {room: string, message: string}, 
+    @MessageBody() data: { room: string, message: string },
     @ConnectedSocket() client: AuthenticatedSocket
   ) {
-    const { sub: userId } = client.user; 
-    
+    const { sub: userId } = client.user;
+
     try {
       const savedMessage = await this.prisma.message.create({
         data: {
@@ -83,7 +85,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           user: { select: { username: true } }
         },
       });
-      
+
       this.server.to(data.room).emit(ChatEvents.NEW_MESSAGE, savedMessage);
       console.log(`Message saved and sent to room ${data.room}`);
     } catch (error) {
@@ -97,10 +99,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket
   ) {
     const { username } = client.user;
-    
-    client.to(data.room).emit(ChatEvents.USER_TYPING, { 
-      username, 
-      isTyping: data.isTyping 
+
+    client.to(data.room).emit(ChatEvents.USER_TYPING, {
+      username,
+      isTyping: data.isTyping
     });
+  }
+
+  @SubscribeMessage(ChatEvents.DELETE_MESSAGE)
+  async handleDeleteMessage(
+    @MessageBody() data: { room: string; messageId: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    try {
+      const { sub: userId } = client.user;
+
+      await this.messagesService.deleteMessage(data.messageId, userId);
+
+      this.server.to(data.room).emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
+    } catch (error) {
+      client.emit('ERROR', { message: error.message });
+    }
   }
 }
