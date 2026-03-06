@@ -2,8 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ChatGateway } from './chat.gateway';
 import { PrismaService } from '../prisma/prisma.service';
-import { Server, Socket } from 'socket.io';
-import { sign, verify } from 'crypto';
+import { MessagesService } from '../messages/messages.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
@@ -13,6 +12,10 @@ describe('ChatGateway', () => {
     message: {
       create: jest.fn(),
     },
+  };
+
+  const mockMessagesService = {
+    deleteMessage: jest.fn(),
   };
 
   const mockServer = {
@@ -46,6 +49,7 @@ describe('ChatGateway', () => {
             sign: jest.fn()
           }
         },
+        { provide: MessagesService, useValue: mockMessagesService },
       ],
     }).compile();
 
