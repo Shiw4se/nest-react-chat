@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { useChatHistory } from '../hooks/useChatHistory';
-import { socket } from '../services/socket';
-
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { MessageBubble } from '../components/ui/MessageBubble';
 import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
 import { useTranslation } from 'react-i18next';
+import { WebSocketManager } from '../websockets/services/WebSocketManager';
 
 export const ChatRoom: React.FC = () => {
   const { t } = useTranslation();
@@ -51,7 +51,7 @@ export const ChatRoom: React.FC = () => {
   };
 
   const handleLeave = useCallback(() => {
-    socket.disconnect();
+    WebSocketManager.getInstance().disconnect();
     clearMessages();
     logout();
   }, [clearMessages, logout]);

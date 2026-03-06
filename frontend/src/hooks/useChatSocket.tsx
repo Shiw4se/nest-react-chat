@@ -1,15 +1,17 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import { socket } from '../services/socket';
 import { useChatStore } from '../store/useChatStore';
 import { SOCKET_EVENTS } from '../constants/socketEvents';
 import type { UserData } from '../types/auth';
 import type { ChatMessage } from '../types/chat';
 import { useAuthStore } from '../store/useAuthStore';
+import { WebSocketManager } from '../websockets/services/WebSocketManager';
 
 export const useChatSocket = (user: UserData | null) => {
   const { addMessage, setTyping, setIsConnected, setIsReconnecting } = useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  const socket = WebSocketManager.getInstance().socket;
 
   useEffect(() => {
     if (!user) return;
