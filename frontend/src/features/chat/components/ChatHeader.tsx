@@ -49,16 +49,17 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
       <div className="flex items-center gap-4">
         <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700">
           {SUPPORTED_LANGUAGES.map((lang) => (
-            <button
+            <Button
               key={lang}
+              variant="text"
               onClick={() => i18n.changeLanguage(lang)}
-              className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all ${i18n.language === lang
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-500 hover:text-slate-300'
+              className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all !no-underline ${i18n.language === lang
+                  ? '!bg-blue-600 !text-white'
+                  : '!text-slate-500 hover:!text-slate-300'
                 }`}
             >
               {lang}
-            </button>
+            </Button>
           ))}
         </div>
 

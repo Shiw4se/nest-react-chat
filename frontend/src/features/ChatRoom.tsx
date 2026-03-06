@@ -25,7 +25,7 @@ export const ChatRoom: React.FC = () => {
   const [oldScrollHeight, setOldScrollHeight] = useState<number | null>(null);
 
   const { loadMore, isLoadingMore } = useChatHistory(user?.room);
-  const { sendMessage, handleTyping } = useChatSocket(user);
+  const { sendMessage, handleTyping, deleteMessage } = useChatSocket(user);
 
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
@@ -64,6 +64,14 @@ export const ChatRoom: React.FC = () => {
     }
   };
 
+  const handleDelete = useCallback((id?: string) => {    
+    if (!id) {
+      console.warn('Cannot delete message without an ID');
+      return;
+    }
+    deleteMessage(id);
+  }, [deleteMessage]);
+
   if (!user) return null;
 
   return (
@@ -87,7 +95,12 @@ export const ChatRoom: React.FC = () => {
           </div>
         ) : (
           messages.map((msg, index) => (
-            <MessageBubble key={index} message={msg} isMe={msg.user.username === user.username} />
+            <MessageBubble
+              key={index}
+              message={msg}
+              isMe={msg.user.username === user.username}
+              onDelete={() => handleDelete(msg.id)}
+            />
           ))
         )}
         <div ref={messagesEndRef} />
