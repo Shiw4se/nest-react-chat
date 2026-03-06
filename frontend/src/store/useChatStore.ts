@@ -15,6 +15,7 @@ interface ChatState {
   prependMessages: (msgs: ChatMessage[]) => void;
   setHasMore: (status: boolean) => void;
   setTyping: (username: string, isTyping: boolean) => void;
+  removeMessage: (messageId: string) => void;
   clearMessages: () => void;
 }
 
@@ -42,6 +43,11 @@ export const useChatStore = create<ChatState>((set) => ({
   setIsReconnecting: (status) => set({ isReconnecting: status }),
 
   setHasMore: (status) => set({ hasMore: status }),
+
+  removeMessage: (messageId) =>
+    set((state) => ({
+      messages: state.messages.filter((msg) => msg.id !== messageId)
+    })),
 
   clearMessages: () => set({ messages: [], typingUsers: [], hasMore: true }),
 }));
