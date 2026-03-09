@@ -1,31 +1,29 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-
-import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from './user.repository';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-  ) {}
+    private readonly userRepository: UserRepository,
+    private readonly jwtService: JwtService,
+  ) { }
 
   async register(username: string, pass: string) {
-    const userExists = await this.prisma.user.findUnique({ where: { username } });
+    const userExists = await this.userRepository.findByUsername(username);
     if (userExists) throw new BadRequestException('User already exists');
 
     const hashedPassword = await bcrypt.hash(pass, 10);
-    const user = await this.prisma.user.create({
-      data: { username, password: hashedPassword },
-    });
+
+    const user = await this.userRepository.create(username, hashedPassword);
 
     const { password, ...result } = user;
     return result;
   }
 
   async login(username: string, pass: string) {
-    const user = await this.prisma.user.findUnique({ where: { username } });
+    const user = await this.userRepository.findByUsername(username);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const isMatch = await bcrypt.compare(pass, user.password);
