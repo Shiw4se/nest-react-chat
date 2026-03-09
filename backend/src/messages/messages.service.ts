@@ -1,49 +1,32 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { MessagesRepository } from './messages.repository';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private readonly messagesRepository: MessagesRepository) { }
+
+  async createMessage(userId: string, room: string, text: string) {
+    return this.messagesRepository.create(userId, room, text);
+  }
 
   async getMessagesForRoom(room: string, cursor?: string, limit: number = 50) {
-    const messages = await this.prisma.message.findMany({
-      take: limit,
-      skip: cursor ? 1 : 0,
-      ...(cursor && { cursor: { id: cursor } }),
-      where: {
-        room: room,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        user: {
-          select: {
-            username: true,
-          },
-        },
-      },
-    });
+    const messages = await this.messagesRepository.findManyByRoom(room, cursor, limit);
 
     return messages.reverse();
   }
 
   async deleteMessage(messageId: string, userId: string) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
+    const message = await this.messagesRepository.findById(messageId);
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new NotFoundException('Message not found');
     }
 
     if (message.userId !== userId) {
-      throw new Error('You can only delete your own messages');
+      throw new ForbiddenException('You can only delete your own messages');
     }
 
-    await this.prisma.message.delete({
-      where: { id: messageId },
-    });
+    await this.messagesRepository.delete(messageId);
 
     return messageId;
   }

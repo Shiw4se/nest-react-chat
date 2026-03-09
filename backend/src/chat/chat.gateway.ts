@@ -1,9 +1,9 @@
 import { MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from "../prisma/prisma.service";
 import { ChatEvents } from "./enums/chat-events.enum";
 import { MessagesService } from "../messages/messages.service";
+import { SendMessageDto } from "src/messages/dto/send-message.dto";
 
 interface AuthPayload {
   sub: string;
@@ -25,7 +25,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly messagesService: MessagesService,
   ) { }
@@ -56,7 +55,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(ChatEvents.JOIN)
-  HandleJoinRoom(
+  handleJoinRoom(
     @MessageBody() data: { room: string, username: string },
     @ConnectedSocket() client: AuthenticatedSocket
   ): void {
@@ -69,22 +68,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
-    @MessageBody() data: { room: string, message: string },
+    @MessageBody() data: SendMessageDto,
     @ConnectedSocket() client: AuthenticatedSocket
   ) {
     const { sub: userId } = client.user;
 
     try {
-      const savedMessage = await this.prisma.message.create({
-        data: {
-          message: data.message,
-          room: data.room,
-          user: { connect: { id: userId } }
-        },
-        include: {
-          user: { select: { username: true } }
-        },
-      });
+      const savedMessage = await this.messagesService.createMessage(userId, data.room, data.message);
 
       this.server.to(data.room).emit(ChatEvents.NEW_MESSAGE, savedMessage);
       console.log(`Message saved and sent to room ${data.room}`);

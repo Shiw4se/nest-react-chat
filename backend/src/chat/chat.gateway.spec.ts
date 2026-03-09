@@ -83,7 +83,7 @@ describe('ChatGateway', () => {
     it('should join the room and emit "User Joined"', () => {
       const data = { room: 'general', username: 'Andrew' };
 
-      gateway.HandleJoinRoom(data, mockAuthenticatedSocket);
+      gateway.handleJoinRoom(data, mockAuthenticatedSocket);
 
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('general');
       expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('general');
