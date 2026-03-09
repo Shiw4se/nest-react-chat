@@ -3,7 +3,7 @@ import { Server, Socket } from "socket.io";
 import { JwtService } from '@nestjs/jwt';
 import { ChatEvents } from "./enums/chat-events.enum";
 import { MessagesService } from "../messages/messages.service";
-import { SendMessageDto } from "src/messages/dto/send-message.dto";
+import { SendMessageDto } from "../messages/dto/send-message.dto";
 
 interface AuthPayload {
   sub: string;
