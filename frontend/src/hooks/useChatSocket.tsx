@@ -17,66 +17,81 @@ export const useChatSocket = (user: UserData | null) => {
   const chatInvoker = useRef(new ChatInvoker()).current;
   const socket = WebSocketManager.getInstance().socket;
 
+
   useEffect(() => {
     if (!user) return;
 
     const token = useAuthStore.getState().token;
     socket.auth = { token };
+
     if (!socket.connected) {
       socket.connect();
-
     }
 
-    socket.on(SOCKET_EVENTS.CONNECT, () => {
+
+  }, [user, socket]);
+
+
+  useEffect(() => {
+    if (!user) return;
+
+    const handleConnect = () => {
       setIsConnected(true);
       setIsReconnecting(false);
       socket.emit(SOCKET_EVENTS.JOIN, { room: user.room, username: user.username });
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.DISCONNECT, (reason) => {
+    const handleDisconnect = (reason: string) => {
       setIsConnected(false);
       if (reason === DISCONNECT_REASONS.IO_SERVER_DISCONNECT) {
         socket.connect();
       }
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.CONNECT_ERROR, () => {
+    const handleConnectError = () => {
       setIsConnected(false);
       setIsReconnecting(true);
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.USER_JOINED, (data: { message: string }) => {
+    const handleUserJoined = (data: { message: string }) => {
       toast.success(data.message);
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.NEW_MESSAGE, (message: ChatMessage) => {
+    const handleNewMessage = (message: ChatMessage) => {
       addMessage(message);
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.USER_TYPING, ({ username, isTyping }) => {
+    const handleUserTyping = ({ username, isTyping }: { username: string, isTyping: boolean }) => {
       setTyping(username, isTyping);
-    });
+    };
 
-    socket.on(SOCKET_EVENTS.DELETE_MESSAGE, ({ messageId }) => {
+    const handleDeleteMessage = ({ messageId }: { messageId: string }) => {
       removeMessage(messageId);
-    });
+    };
+
+    socket.on(SOCKET_EVENTS.CONNECT, handleConnect);
+    socket.on(SOCKET_EVENTS.DISCONNECT, handleDisconnect);
+    socket.on(SOCKET_EVENTS.CONNECT_ERROR, handleConnectError);
+    socket.on(SOCKET_EVENTS.USER_JOINED, handleUserJoined);
+    socket.on(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
+    socket.on(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
+    socket.on(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
 
     return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('connect_error');
-      socket.off(SOCKET_EVENTS.NEW_MESSAGE);
-      socket.off(SOCKET_EVENTS.USER_TYPING);
-      socket.off(SOCKET_EVENTS.USER_JOINED);
-      socket.off(SOCKET_EVENTS.DELETE_MESSAGE);
-
-      socket.disconnect();
+      socket.off(SOCKET_EVENTS.CONNECT, handleConnect);
+      socket.off(SOCKET_EVENTS.DISCONNECT, handleDisconnect);
+      socket.off(SOCKET_EVENTS.CONNECT_ERROR, handleConnectError);
+      socket.off(SOCKET_EVENTS.USER_JOINED, handleUserJoined);
+      socket.off(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
+      socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
+      socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
     };
-  }, [user, addMessage, setTyping, setIsConnected, setIsReconnecting]);
+  }, [user, socket, addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage]);
+
 
   const sendMessage = useCallback((payload: ChatMessagePayload) => {
     socket.emit(SOCKET_EVENTS.SEND_MESSAGE, payload);
-  }, []);
+  }, [socket]);
 
   const sendTypingStatus = useCallback(
     (isTyping: boolean) => {

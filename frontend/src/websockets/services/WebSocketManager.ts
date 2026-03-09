@@ -9,6 +9,7 @@ export class WebSocketManager {
 
         this.socket = io(baseURL, {
             autoConnect: false,
+            transports: ['websocket'],
         });
     }
 
