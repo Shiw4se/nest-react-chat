@@ -26,5 +26,16 @@
     "room_required": "Pokój jest wymagany",
     "registration_failed": "Rejestracja nie powiodła się. Spróbuj ponownie.",
     "login_failed": "Błąd logowania. Sprawdź swoje dane."
+  },
+  "tour": {
+    "header_title": "Informacje o pokoju",
+    "header_desc": "Tutaj widzisz nazwę swojego pokoju oraz przycisk wyjścia.",
+    "messages_title": "Historia wiadomości",
+    "messages_desc": "Wszystkie wiadomości od uczestników pojawią się tutaj w czasie rzeczywistym.",
+    "input_title": "Wysyłanie wiadomości",
+    "input_desc": "Wpisz swój tekst tutaj i naciśnij Enter lub przycisk wysyłania.",
+    "nextBtnText": "Dalej ➔",
+    "prevBtnText": "⬅ Wstecz",
+    "doneBtnText": "Gotowe ✔"
   }
 }

@@ -26,5 +26,16 @@
     "room_required": "Room is required",
     "registration_failed": "Registration failed. Please try again.",
     "login_failed": "Login failed. Please check your credentials."
+  },
+  "tour": {
+    "header_title": "Room Information",
+    "header_desc": "Here you can see the name of your current room and the button to leave it.",
+    "messages_title": "Message History",
+    "messages_desc": "All messages from participants will appear here in real-time.",
+    "input_title": "Send a Message",
+    "input_desc": "Type your text here and press Enter or the send button to share it.",
+    "nextBtnText": "Next ➔",
+    "prevBtnText": "⬅ Prev",
+    "doneBtnText": "Done ✔"
   }
 }

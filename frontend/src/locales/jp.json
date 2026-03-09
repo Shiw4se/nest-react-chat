@@ -26,5 +26,16 @@
     "room_required": "ルーム名が必要です",
     "registration_failed": "登録に失敗しました。もう一度お試しください。",
     "login_failed": "ログインに失敗しました。認証情報を確認してください。"
+  },
+  "tour": {
+    "header_title": "ルーム情報",
+    "header_desc": "現在のルーム名と退出ボタンが表示されます。",
+    "messages_title": "メッセージ履歴",
+    "messages_desc": "参加者のメッセージがリアルタイムでここに表示されます。",
+    "input_title": "メッセージの送信",
+    "input_desc": "テキストを入力し、Enterキーまたは送信ボタンを押してください。",
+    "nextBtnText": "次へ ➔",
+    "prevBtnText": "⬅ 前へ",
+    "doneBtnText": "完了 ✔"
   }
 }
