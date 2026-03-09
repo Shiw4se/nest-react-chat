@@ -6,9 +6,9 @@ import type { UserData } from '../types/auth';
 import type { ChatMessage } from '../types/chat';
 import { useAuthStore } from '../store/useAuthStore';
 import { WebSocketManager } from '../websockets/services/WebSocketManager';
-import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
 import { ChatInvoker } from '../websockets/services/ChatInvoker';
 import { DeleteMessageCommand } from '../websockets/commands/DeleteMessageCommand';
+import type { ChatMessagePayload } from '../websockets/builders/MessageBuilder';
 
 export const useChatSocket = (user: UserData | null) => {
   const { addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage } = useChatStore();
@@ -74,15 +74,9 @@ export const useChatSocket = (user: UserData | null) => {
     };
   }, [user, addMessage, setTyping, setIsConnected, setIsReconnecting]);
 
-  const sendMessage = useCallback(
-    (text: string) => {
-      if (!user) return;
-
-      const sendCommand = new SendMessageCommand(socket, user, text);
-      chatInvoker.executeCommand(sendCommand);
-    },
-    [user, socket, chatInvoker],
-  );
+  const sendMessage = useCallback((payload: ChatMessagePayload) => {
+    socket.emit(SOCKET_EVENTS.SEND_MESSAGE, payload);
+  }, []);
 
   const sendTypingStatus = useCallback(
     (isTyping: boolean) => {
