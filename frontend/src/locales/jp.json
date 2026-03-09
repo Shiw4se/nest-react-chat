@@ -21,6 +21,10 @@
     "already_have_account": "すでにアカウントをお持ちですか？ ",
     "dont_have_account": "アカウントをお持ちではありませんか？ ",
     "log_in_link": "ログイン",
-    "sign_up_link": "サインアップ"
+    "sign_up_link": "サインアップ",
+    "registration_success": "登録に成功しました！ログインしてください。",
+    "room_required": "ルーム名が必要です",
+    "registration_failed": "登録に失敗しました。もう一度お試しください。",
+    "login_failed": "ログインに失敗しました。認証情報を確認してください。"
   }
 }

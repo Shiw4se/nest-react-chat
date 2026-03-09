@@ -21,6 +21,10 @@
     "already_have_account": "Masz już konto? ",
     "dont_have_account": "Nie masz konta? ",
     "log_in_link": "Zaloguj się",
-    "sign_up_link": "Zarejestruj się"
+    "sign_up_link": "Zarejestruj się",
+    "registration_success": "Rejestracja zakończona sukcesem! Zaloguj się.",
+    "room_required": "Pokój jest wymagany",
+    "registration_failed": "Rejestracja nie powiodła się. Spróbuj ponownie.",
+    "login_failed": "Błąd logowania. Sprawdź swoje dane."
   }
 }

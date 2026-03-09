@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const useJoinForm = () => {
   const [formData, setFormData] = useState({ username: '', password: '', room: '' });
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const login = useAuthStore((state) => state.login);
   const register = useAuthStore((state) => state.register);
@@ -27,14 +29,14 @@ export const useJoinForm = () => {
     try {
       if (isRegisterMode) {
         await register(formData.username, formData.password);
-        toast.success('Registration successful! Please log in.');
+        toast.success(t('auth.registration_success'));
         setIsRegisterMode(false);
       } else {
-        if (!formData.room) return setError('Room is required');
+        if (!formData.room) return setError(t('auth.room_required'));
         await login(formData.username, formData.password, formData.room);
       }
     } catch {
-      const errorMessage = isRegisterMode ? 'Registration failed' : 'Login failed';
+      const errorMessage = isRegisterMode ? t('auth.registration_failed') : t('auth.login_failed');
       setError(errorMessage);
       toast.error(errorMessage);
     }

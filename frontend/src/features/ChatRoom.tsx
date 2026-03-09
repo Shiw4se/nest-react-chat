@@ -43,12 +43,12 @@ export const ChatRoom: React.FC = () => {
     }
   }, [messages]);
 
-  const onSend = (e: React.FormEvent) => {
+  const onSend = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
     sendMessage(inputText);
     setInputText('');
-  };
+  }, [inputText, sendMessage]);
 
   const handleLeave = useCallback(() => {
     WebSocketManager.getInstance().disconnect();

@@ -21,6 +21,10 @@
     "already_have_account": "Вже є акаунт? ",
     "dont_have_account": "Немає акаунту? ",
     "log_in_link": "Увійти",
-    "sign_up_link": "Зареєструватися"
+    "sign_up_link": "Зареєструватися",
+    "registration_success": "Реєстрація успішна! Будь ласка, увійдіть.",
+    "room_required": "Необхідно вказати кімнату",
+    "registration_failed": "Помилка реєстрації. Спробуйте ще раз.",
+    "login_failed": "Помилка входу. Перевірте свої дані."
   }
 }

@@ -22,7 +22,10 @@ export const useChatSocket = (user: UserData | null) => {
 
     const token = useAuthStore.getState().token;
     socket.auth = { token };
-    socket.connect();
+    if (!socket.connected) {
+      socket.connect();
+
+    }
 
     socket.on(SOCKET_EVENTS.CONNECT, () => {
       setIsConnected(true);
