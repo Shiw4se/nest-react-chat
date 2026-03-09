@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
 
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
@@ -11,6 +12,9 @@ import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
 import { useTranslation } from 'react-i18next';
 import { WebSocketManager } from '../websockets/services/WebSocketManager';
+import { MessageBuilder } from '../websockets/builders/MessageBuilder';
+import { MessageValidatorContext, BasicValidator } from '../websockets/strategies/MessageValidator';
+import { useChatTour } from '../hooks/useChatTour';
 
 export const ChatRoom: React.FC = () => {
   const { t } = useTranslation();
@@ -29,6 +33,12 @@ export const ChatRoom: React.FC = () => {
 
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
+  const messageValidator = useMemo(() => {
+    return new MessageValidatorContext(new BasicValidator());
+  }, []);
+
+  useChatTour(!!user, user?.username);
+
   useEffect(() => {
     if (oldScrollHeight === null) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -45,10 +55,21 @@ export const ChatRoom: React.FC = () => {
 
   const onSend = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim()) return;
-    sendMessage(inputText);
-    setInputText('');
-  }, [inputText, sendMessage]);
+
+    try {
+      messageValidator.validate(inputText);
+
+      const payload = new MessageBuilder()
+        .setRoom(user!.room)
+        .setMessage(inputText.trim())
+        .build();
+
+      sendMessage(payload);
+      setInputText('');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }, [inputText, sendMessage, user, messageValidator]);
 
   const handleLeave = useCallback(() => {
     WebSocketManager.getInstance().disconnect();
@@ -64,7 +85,7 @@ export const ChatRoom: React.FC = () => {
     }
   };
 
-  const handleDelete = useCallback((id?: string) => {    
+  const handleDelete = useCallback((id?: string) => {
     if (!id) {
       console.warn('Cannot delete message without an ID');
       return;
@@ -76,9 +97,12 @@ export const ChatRoom: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-200 font-sans">
-      <ChatHeader room={user.room} username={user.username} onLeave={handleLeave} />
+      <div id="tour-header">
+        <ChatHeader room={user.room} username={user.username} onLeave={handleLeave} />
+      </div>
 
       <main
+        id="tour-messages"
         ref={chatContainerRef}
         className="flex-1 overflow-y-auto p-4 space-y-4 relative"
         onScroll={handleScroll}
@@ -108,7 +132,7 @@ export const ChatRoom: React.FC = () => {
 
       <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
         <TypingIndicator users={typingUsers} />
-        <form onSubmit={onSend} className="flex gap-3 max-w-4xl mx-auto">
+        <form id="tour-input" onSubmit={onSend} className="flex gap-3 max-w-4xl mx-auto">
           <Input
             value={inputText}
             onChange={(e) => {
