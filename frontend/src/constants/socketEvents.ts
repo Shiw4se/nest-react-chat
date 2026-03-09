@@ -5,7 +5,7 @@ export const SOCKET_EVENTS = {
 
   JOIN: 'join',
   USER_JOINED: 'userJoined',
-  SEND_MESSAGE: 'SendMessage',
+  SEND_MESSAGE: 'sendMessage',
   NEW_MESSAGE: 'newMessage',
   TYPING: 'typing',
   USER_TYPING: 'userTyping',
