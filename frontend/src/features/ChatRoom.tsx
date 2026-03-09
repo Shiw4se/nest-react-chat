@@ -53,18 +53,24 @@ export const ChatRoom: React.FC = () => {
     }
   }, [messages]);
 
-  const onSend = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
+  const onSend = useCallback(() => {
+    const text = inputText.trim();
+    if (!text) return;
 
     try {
-      messageValidator.validate(inputText);
+      messageValidator.validate(text);
 
-      const payload = new MessageBuilder()
-        .setRoom(user!.room)
-        .setMessage(inputText.trim())
-        .build();
+      const chunks = text.match(/[\s\S]{1,2000}/gu) || [];
 
-      sendMessage(payload);
+      chunks.forEach((chunk) => {
+        const payload = new MessageBuilder()
+          .setRoom(user!.room)
+          .setMessage(chunk)
+          .build();
+
+        sendMessage(payload);
+      });
+
       setInputText('');
     } catch (error: any) {
       toast.error(error.message);
@@ -87,7 +93,7 @@ export const ChatRoom: React.FC = () => {
 
   const handleDelete = useCallback((id?: string) => {
     if (!id) {
-      console.warn('Cannot delete message without an ID');
+      toast.error('Cannot delete a message that is still sending');
       return;
     }
     deleteMessage(id);
@@ -132,20 +138,27 @@ export const ChatRoom: React.FC = () => {
 
       <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
         <TypingIndicator users={typingUsers} />
-        <form id="tour-input" onSubmit={onSend} className="flex gap-3 max-w-4xl mx-auto">
+
+        <div id="tour-input" className="flex gap-3 max-w-4xl mx-auto items-end">
           <Input
+            multiline
             value={inputText}
-            onChange={(e) => {
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
               setInputText(e.target.value);
               handleTyping();
             }}
+            onEnterPress={onSend}
             placeholder={t('chat.placeholder')}
             className="flex-1"
           />
-          <Button type="submit" disabled={!inputText.trim()} className="px-6 py-3">
+          <Button
+            onClick={onSend}
+            disabled={!inputText.trim()}
+            className="px-6 py-3 h-[48px]"
+          >
             {t('chat.send')}
           </Button>
-        </form>
+        </div>
       </footer>
     </div>
   );
