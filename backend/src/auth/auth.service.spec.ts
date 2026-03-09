@@ -5,19 +5,18 @@ import * as bcrypt from 'bcrypt';
 
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from './user.repository';
 
 jest.mock('bcrypt');
 
 
 describe('AuthService', () => {
   let authService: AuthService;
-  let prismaService: PrismaService;
+  let userRepository: UserRepository;
 
-  const mockPrismaService = {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
+  const mockUserRepository = {
+    findByUsername: jest.fn(),
+    create: jest.fn(),
   };
 
   const mockJwtService = {
@@ -28,13 +27,13 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: UserRepository, useValue: mockUserRepository },
         { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
 
     authService = module.get<AuthService>(AuthService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    userRepository = module.get<UserRepository>(UserRepository);
   });
 
   afterEach(() => {
@@ -47,7 +46,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should throw UnauthorizedException if user is not found', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockUserRepository.findByUsername.mockResolvedValue(null);
 
      
       await expect(authService.login('wrong_user', 'password123')).rejects.toThrow(
@@ -64,7 +63,7 @@ describe('AuthService', () => {
       };
 
 
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockUserRepository.findByUsername.mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
 
       const result = await authService.login('andrew_test', 'password123');
@@ -76,15 +75,15 @@ describe('AuthService', () => {
             username: 'andrew_test',
         }
         });  
-        expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { username: 'andrew_test' },
-      });
+        
+        expect(userRepository.findByUsername).toHaveBeenCalledWith('andrew_test');
+      
     });
   });
 
   describe('register', () => {
     it('should throw BadRequestException if user already exists', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({ 
+      mockUserRepository.findByUsername.mockResolvedValue({ 
         id: 'existing-id', 
         username: 'andrew_test' 
       });
@@ -95,7 +94,7 @@ describe('AuthService', () => {
     });
 
     it('should hash password and return token for a new user', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockUserRepository.findByUsername.mockResolvedValue(null);
       
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password_123');
 
@@ -104,7 +103,7 @@ describe('AuthService', () => {
         username: 'andrew_new',
         password: 'hashed_password_123',
       };
-      mockPrismaService.user.create.mockResolvedValue(newUser);
+      mockUserRepository.create.mockResolvedValue(newUser);
 
       const result = await authService.register('andrew_new', 'password123');
 
@@ -113,7 +112,7 @@ describe('AuthService', () => {
         username: 'andrew_new',
       });
 
-      expect(prismaService.user.create).toHaveBeenCalled();
+      expect(userRepository.create).toHaveBeenCalled();
     });
   });
  });

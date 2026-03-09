@@ -1,28 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { take } from 'rxjs';
+import { MessagesRepository } from './messages.repository';
 
 describe('MessagesService', () => {
   let messagesService: MessagesService;
-  let prismaService: PrismaService;
+  let messagesRepository: MessagesRepository;
 
-  const mockPrismaService = {
-    message: {
-      findMany: jest.fn(),
-    },
+  const mockMessagesRepository = {
+    create: jest.fn(),
+    findManyByRoom: jest.fn(),
+    findById: jest.fn(),
+    delete: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MessagesService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: MessagesRepository, useValue: mockMessagesRepository },
       ],
     }).compile();
 
     messagesService = module.get<MessagesService>(MessagesService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    messagesRepository = module.get<MessagesRepository>(MessagesRepository);
   });
 
   afterEach(() => {
@@ -34,24 +34,22 @@ describe('MessagesService', () => {
   });
 
   describe('getMessagesForRoom', () => {
-    it('should return an array of messages for a specific room', async () => {
+    it('should return an array of reversed messages for a specific room', async () => {
       const mockMessagesList = [
-        { id: 'msg-1', content: 'Hi', room: 'general', user: { username: 'andrew_test' } },
+        { id: 'msg-1', message: 'First', room: 'general', user: { username: 'andrew_test' } },
+        { id: 'msg-2', message: 'Second', room: 'general', user: { username: 'andrew_test' } },
       ];
 
-      mockPrismaService.message.findMany.mockResolvedValue(mockMessagesList);
+      mockMessagesRepository.findManyByRoom.mockResolvedValue([...mockMessagesList]);
 
       const result = await messagesService.getMessagesForRoom('general');
 
-      expect(result).toEqual(mockMessagesList);
+      expect(result).toEqual([
+        { id: 'msg-2', message: 'Second', room: 'general', user: { username: 'andrew_test' } },
+        { id: 'msg-1', message: 'First', room: 'general', user: { username: 'andrew_test' } },
+      ]);
 
-      expect(prismaService.message.findMany).toHaveBeenCalledWith({
-        take: 50,
-        skip: 0,
-        where: { room: 'general' },
-        orderBy: { createdAt: 'desc' },
-        include: { user: { select: { username: true } } },
-      });
+      expect(messagesRepository.findManyByRoom).toHaveBeenCalledWith('general', undefined, 50);
     });
   });
 });

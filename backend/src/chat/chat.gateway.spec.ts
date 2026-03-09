@@ -1,20 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ChatGateway } from './chat.gateway';
-import { PrismaService } from '../prisma/prisma.service';
 import { MessagesService } from '../messages/messages.service';
+import { ChatEvents } from './enums/chat-events.enum';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
-  let prismaService: PrismaService;
-
-  const mockPrismaService = {
-    message: {
-      create: jest.fn(),
-    },
-  };
+  let messagesService: MessagesService;
 
   const mockMessagesService = {
+    createMessage: jest.fn(),
     deleteMessage: jest.fn(),
   };
 
@@ -40,7 +35,7 @@ describe('ChatGateway', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatGateway,
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: MessagesService, useValue: mockMessagesService },
         {
           provide: JwtService,
           useValue: {
@@ -49,14 +44,16 @@ describe('ChatGateway', () => {
             sign: jest.fn()
           }
         },
-        { provide: MessagesService, useValue: mockMessagesService },
       ],
     }).compile();
 
     gateway = module.get<ChatGateway>(ChatGateway);
-    prismaService = module.get<PrismaService>(PrismaService);
-
+    messagesService = module.get<MessagesService>(MessagesService);
     gateway.server = mockServer as any;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
@@ -79,7 +76,7 @@ describe('ChatGateway', () => {
     });
   });
 
-  describe('HandleJoinRoom', () => {
+  describe('handleJoinRoom', () => {
     it('should join the room and emit "User Joined"', () => {
       const data = { room: 'general', username: 'Andrew' };
 
@@ -87,14 +84,15 @@ describe('ChatGateway', () => {
 
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('general');
       expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('general');
-      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('userJoined', {
+
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(ChatEvents.USER_JOINED, {
         message: 'User Andrew has joined room',
       });
     });
   });
 
   describe('handleMessage', () => {
-    it('should save message to Prisma and emit to the room', async () => {
+    it('should save message via service and emit to the room', async () => {
       const data = { room: 'general', message: 'Hello logic!' };
       const mockSavedMessage = {
         id: 'msg-1',
@@ -103,21 +101,18 @@ describe('ChatGateway', () => {
         user: { username: 'Andrew' },
       };
 
-      mockPrismaService.message.create.mockResolvedValue(mockSavedMessage);
+      mockMessagesService.createMessage.mockResolvedValue(mockSavedMessage);
 
-      await gateway.handleMessage(data, mockAuthenticatedSocket);
+      await gateway.handleMessage(data as any, mockAuthenticatedSocket);
 
-      expect(prismaService.message.create).toHaveBeenCalledWith({
-        data: {
-          message: data.message,
-          room: data.room,
-          user: { connect: { id: 'user-123' } },
-        },
-        include: { user: { select: { username: true } } },
-      });
+      expect(messagesService.createMessage).toHaveBeenCalledWith(
+        'user-123',
+        'general',
+        'Hello logic!'
+      );
 
       expect(mockServer.to).toHaveBeenCalledWith('general');
-      expect(mockServer.emit).toHaveBeenCalledWith('newMessage', mockSavedMessage);
+      expect(mockServer.emit).toHaveBeenCalledWith(ChatEvents.NEW_MESSAGE, mockSavedMessage);
     });
   });
 });
