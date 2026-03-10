@@ -32,7 +32,7 @@ describe('MessagesController', () => {
 
   describe('getRoomMessages', () => {
     it('should return messages if user has access', async () => {
-      const mockReq = { user: { sub: 'user-123' } };
+      const mockReq = { user: { userId: 'user-123' } };
       const mockParams = { roomId: 'room-123' };
       const mockQuery = { cursor: undefined, limit: 50 };
 
