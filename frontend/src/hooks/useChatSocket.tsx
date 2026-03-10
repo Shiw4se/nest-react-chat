@@ -8,18 +8,18 @@ import { useAuthStore } from '../store/useAuthStore';
 import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import { ChatInvoker } from '../websockets/services/ChatInvoker';
 import { DeleteMessageCommand } from '../websockets/commands/DeleteMessageCommand';
-import type { ChatMessagePayload } from '../websockets/builders/MessageBuilder';
+import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
+import type { ChatMessagePayload } from '../types/message';
 
-export const useChatSocket = (user: UserData | null) => {
+export const useChatSocket = (user: UserData | null, roomId: string | null) => {
   const { addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage } = useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chatInvoker = useRef(new ChatInvoker()).current;
   const socket = WebSocketManager.getInstance().socket;
 
-
   useEffect(() => {
-    if (!user) return;
+    if (!user || !roomId) return;
 
     const token = useAuthStore.getState().token;
     socket.auth = { token };
@@ -28,17 +28,18 @@ export const useChatSocket = (user: UserData | null) => {
       socket.connect();
     }
 
-
-  }, [user, socket]);
-
+    if (socket.connected) {
+      socket.emit(SOCKET_EVENTS.JOIN, { roomId, username: user.username });
+    }
+  }, [user, roomId, socket]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !roomId) return;
 
     const handleConnect = () => {
       setIsConnected(true);
       setIsReconnecting(false);
-      socket.emit(SOCKET_EVENTS.JOIN, { room: user.room, username: user.username });
+      socket.emit(SOCKET_EVENTS.JOIN, { roomId, username: user.username });
     };
 
     const handleDisconnect = (reason: string) => {
@@ -61,7 +62,7 @@ export const useChatSocket = (user: UserData | null) => {
       addMessage(message);
     };
 
-    const handleUserTyping = ({ username, isTyping }: { username: string, isTyping: boolean }) => {
+    const handleUserTyping = ({ username, isTyping }: { username: string; isTyping: boolean }) => {
       setTyping(username, isTyping);
     };
 
@@ -86,19 +87,22 @@ export const useChatSocket = (user: UserData | null) => {
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
       socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
     };
-  }, [user, socket, addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage]);
+  }, [user, roomId, socket, addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage]);
 
-
-  const sendMessage = useCallback((payload: ChatMessagePayload) => {
-    socket.emit(SOCKET_EVENTS.SEND_MESSAGE, payload);
-  }, [socket]);
+  const sendMessage = useCallback(
+    (payload: ChatMessagePayload) => {
+      const command = new SendMessageCommand(socket, payload.roomId, payload.message);
+      chatInvoker.executeCommand(command);
+    },
+    [socket, chatInvoker],
+  );
 
   const sendTypingStatus = useCallback(
     (isTyping: boolean) => {
-      if (!user) return;
-      socket.emit(SOCKET_EVENTS.TYPING, { room: user.room, isTyping });
+      if (!user || !roomId) return;
+      socket.emit(SOCKET_EVENTS.TYPING, { roomId, isTyping });
     },
-    [user, socket],
+    [user, roomId, socket],
   );
 
   const handleTyping = useCallback(() => {
@@ -109,12 +113,11 @@ export const useChatSocket = (user: UserData | null) => {
 
   const deleteMessage = useCallback(
     (messageId: string) => {
-      if (!user) return;
-
-      const deleteCommand = new DeleteMessageCommand(socket, user.room, messageId);
-      chatInvoker.executeCommand(deleteCommand);
+      if (!user || !roomId) return;
+      const command = new DeleteMessageCommand(socket, roomId, messageId);
+      chatInvoker.executeCommand(command);
     },
-    [user, socket, chatInvoker]
+    [user, roomId, socket, chatInvoker],
   );
 
   return { sendMessage, handleTyping, deleteMessage, chatInvoker };

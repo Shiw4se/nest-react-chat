@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const useJoinForm = () => {
-  const [formData, setFormData] = useState({ username: '', password: '', room: '' });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [error, setError] = useState('');
   const { t } = useTranslation();
@@ -32,8 +32,7 @@ export const useJoinForm = () => {
         toast.success(t('auth.registration_success'));
         setIsRegisterMode(false);
       } else {
-        if (!formData.room) return setError(t('auth.room_required'));
-        await login(formData.username, formData.password, formData.room);
+        await login(formData.username, formData.password);
       }
     } catch {
       const errorMessage = isRegisterMode ? t('auth.registration_failed') : t('auth.login_failed');

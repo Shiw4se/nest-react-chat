@@ -15,7 +15,7 @@ export const JoinForm: React.FC = () => {
         className="bg-slate-800 p-8 rounded-2xl shadow-xl w-96 border border-slate-700"
       >
         <h2 className="text-3xl font-bold mb-6 text-center text-white">
-          {isRegisterMode ? t('auth.create_account') : t('auth.join_chat')}
+          {isRegisterMode ? t('auth.create_account') : t('auth.log_in')}
         </h2>
 
         {error && (
@@ -41,18 +41,9 @@ export const JoinForm: React.FC = () => {
             required
           />
 
-          {!isRegisterMode && (
-            <Input
-              name="room"
-              placeholder={t('auth.room')}
-              value={formData.room}
-              onChange={handleChange}
-              required
-            />
-          )}
 
           <Button type="submit" className="w-full mt-2">
-            {isRegisterMode ? t('auth.sign_up_btn') : t('auth.join_room_btn')}
+            {isRegisterMode ? t('auth.sign_up_btn') : t('auth.log_in_btn')}
           </Button>
         </div>
 

@@ -15,21 +15,24 @@ import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import { MessageBuilder } from '../websockets/builders/MessageBuilder';
 import { MessageValidatorContext, BasicValidator } from '../websockets/strategies/MessageValidator';
 import { useChatTour } from '../hooks/useChatTour';
+import { useRoomStore } from '../store/useRoomStore';
 
 export const ChatRoom: React.FC = () => {
   const { t } = useTranslation();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.clearAuth);
   const { messages, typingUsers, clearMessages } = useChatStore();
-
+  
+  const { activeRoomId, myRooms, publicRooms } = useRoomStore();
+  
   const [inputText, setInputText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [oldScrollHeight, setOldScrollHeight] = useState<number | null>(null);
 
-  const { loadMore, isLoadingMore } = useChatHistory(user?.room);
-  const { sendMessage, handleTyping, deleteMessage } = useChatSocket(user);
+  const { loadMore, isLoadingMore } = useChatHistory(activeRoomId);
+  const { sendMessage, handleTyping, deleteMessage } = useChatSocket(user, activeRoomId);
 
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
@@ -55,7 +58,7 @@ export const ChatRoom: React.FC = () => {
 
   const onSend = useCallback(() => {
     const text = inputText.trim();
-    if (!text) return;
+    if (!text || !activeRoomId) return;
 
     try {
       messageValidator.validate(text);
@@ -64,7 +67,7 @@ export const ChatRoom: React.FC = () => {
 
       chunks.forEach((chunk) => {
         const payload = new MessageBuilder()
-          .setRoom(user!.room)
+          .setRoom(activeRoomId)
           .setMessage(chunk)
           .build();
 
@@ -75,7 +78,7 @@ export const ChatRoom: React.FC = () => {
     } catch (error: any) {
       toast.error(error.message);
     }
-  }, [inputText, sendMessage, user, messageValidator]);
+  }, [inputText, sendMessage, activeRoomId, messageValidator]);
 
   const handleLeave = useCallback(() => {
     WebSocketManager.getInstance().disconnect();
@@ -101,10 +104,24 @@ export const ChatRoom: React.FC = () => {
 
   if (!user) return null;
 
+  if (!activeRoomId) {
+    return (
+      <div className="flex-1 flex h-screen items-center justify-center bg-slate-900 text-slate-500 font-sans border-l border-slate-800">
+        <div className="text-center">
+          <div className="text-6xl mb-4 opacity-20">💬</div>
+          <p className="text-lg font-medium">{t('chat.select_to_start') || 'Select a chat to start messaging'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentRoom = [...myRooms, ...publicRooms].find(r => r.id === activeRoomId);
+  const roomName = currentRoom?.name || 'Loading...';
+
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-slate-200 font-sans">
+    <div className="flex-1 flex flex-col h-screen bg-slate-900 text-slate-200 font-sans border-l border-slate-800">
       <div id="tour-header">
-        <ChatHeader room={user.room} username={user.username} onLeave={handleLeave} />
+        <ChatHeader room={roomName} username={user.username} onLeave={handleLeave} />
       </div>
 
       <main

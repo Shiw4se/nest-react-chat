@@ -1,13 +1,10 @@
-export interface ChatMessagePayload {
-    room: string;
-    message: string;
-}
+import type { ChatMessagePayload } from '../../types/message';
 
 export class MessageBuilder {
     private payload: Partial<ChatMessagePayload> = {};
 
-    setRoom(room: string): this {
-        this.payload.room = room;
+    setRoom(roomId: string): this {
+        this.payload.roomId = roomId; 
         return this;
     }
 
@@ -17,8 +14,8 @@ export class MessageBuilder {
     }
 
     build(): ChatMessagePayload {
-        if (!this.payload.room || !this.payload.message) {
-            throw new Error('MessageBuilder: Room and message are required fields');
+        if (!this.payload.roomId || !this.payload.message) {
+            throw new Error('MessageBuilder: Room ID and message are required fields');
         }
 
         return this.payload as ChatMessagePayload;

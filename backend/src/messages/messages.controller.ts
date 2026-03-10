@@ -22,7 +22,7 @@ export class MessagesController {
     @Param() params: RoomParamDto,
     @Query() query: PaginationQueryDto,
   ) {
-    const userId = req.user.sub || req.user.id;
+    const userId = req.user.userId;
 
     const hasAccess = await this.roomsService.checkRoomAccess(userId, params.roomId);
 

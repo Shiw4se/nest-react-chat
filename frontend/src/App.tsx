@@ -1,7 +1,7 @@
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/useAuthStore';
 import { JoinForm } from './features/JoinForm';
-import { ChatRoom } from './features/ChatRoom';
+import { Dashboard } from './features/Dashboard'; 
 
 function App() {
   const user = useAuthStore((state) => state.user);
@@ -27,7 +27,7 @@ function App() {
           },
         }}
       />
-      {!user ? <JoinForm /> : <ChatRoom />}
+      {!user ? <JoinForm /> : <Dashboard />}
     </div>
   );
 }
