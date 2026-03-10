@@ -5,14 +5,12 @@ import { MessagesRepository } from './messages.repository';
 export class MessagesService {
   constructor(private readonly messagesRepository: MessagesRepository) { }
 
-  async createMessage(userId: string, room: string, text: string) {
-    return this.messagesRepository.create(userId, room, text);
+  async createMessage(userId: string, roomId: string, text: string) {
+    return this.messagesRepository.create(userId, roomId, text);
   }
 
-  async getMessagesForRoom(room: string, cursor?: string, limit: number = 50) {
-    const messages = await this.messagesRepository.findManyByRoom(room, cursor, limit);
-
-    return messages.reverse();
+  async getMessagesForRoom(roomId: string, cursor?: string, limit: number = 50) {
+    return this.messagesRepository.findManyByRoom(roomId, cursor, limit);
   }
 
   async deleteMessage(messageId: string, userId: string) {

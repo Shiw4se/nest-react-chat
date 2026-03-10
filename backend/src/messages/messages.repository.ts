@@ -5,12 +5,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class MessagesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(userId: string, room: string, message: string) {
+  async create(userId: string, roomId: string, message: string) {
     return this.prisma.message.create({
       data: {
         message,
-        room,
-        user: { connect: { id: userId } },
+        roomId, 
+        userId, 
       },
       include: {
         user: { select: { username: true } },
@@ -18,17 +18,19 @@ export class MessagesRepository {
     });
   }
 
-  async findManyByRoom(room: string, cursor?: string, limit: number = 50) {
-    return this.prisma.message.findMany({
+  async findManyByRoom(roomId: string, cursor?: string, limit: number = 50) {
+    const messages = await this.prisma.message.findMany({
       take: limit,
       skip: cursor ? 1 : 0,
       ...(cursor && { cursor: { id: cursor } }),
-      where: { room },
+      where: { roomId }, 
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { username: true } },
       },
     });
+
+    return messages.reverse();
   }
 
   async findById(id: string) {

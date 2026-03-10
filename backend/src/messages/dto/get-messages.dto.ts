@@ -1,9 +1,9 @@
-import { IsString, IsOptional, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, IsUUID } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class RoomParamDto {
-    @IsString()
-    room: string;
+    @IsUUID()
+    roomId: string; 
 }
 
 export class PaginationQueryDto {

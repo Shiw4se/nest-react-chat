@@ -1,13 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
+import { RoomsService } from '../rooms/rooms.service';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
-  let service: MessagesService;
 
   const mockMessagesService = {
-    getMessagesForRoom: jest.fn(),
+    getMessagesForRoom: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockRoomsService = {
+    checkRoomAccess: jest.fn().mockResolvedValue(true),
   };
 
   beforeEach(async () => {
@@ -15,30 +19,28 @@ describe('MessagesController', () => {
       controllers: [MessagesController],
       providers: [
         { provide: MessagesService, useValue: mockMessagesService },
+        { provide: RoomsService, useValue: mockRoomsService },
       ],
     }).compile();
 
     controller = module.get<MessagesController>(MessagesController);
-    service = module.get<MessagesService>(MessagesService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('getMessages', () => {
-    it('should call service.getMessagesForRoom with correct room', async () => {
-      const room = 'general';
-      const mockResult = [{ id: '1', content: 'test', room }];
-      mockMessagesService.getMessagesForRoom.mockResolvedValue(mockResult);
+  describe('getRoomMessages', () => {
+    it('should return messages if user has access', async () => {
+      const mockReq = { user: { sub: 'user-123' } };
+      const mockParams = { roomId: 'room-123' };
+      const mockQuery = { cursor: undefined, limit: 50 };
 
-      const result = await controller.getRoomMessages(
-        { room },
-        { cursor: undefined, limit: 50 }
-      );
+      const result = await controller.getRoomMessages(mockReq, mockParams as any, mockQuery);
 
-      expect(result).toEqual(mockResult);
-      expect(service.getMessagesForRoom).toHaveBeenCalledWith(room, undefined, 50);
+      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith('user-123', 'room-123');
+      expect(mockMessagesService.getMessagesForRoom).toHaveBeenCalledWith('room-123', undefined, 50);
+      expect(result).toEqual([]);
     });
   });
 });

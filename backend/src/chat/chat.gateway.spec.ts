@@ -2,15 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ChatGateway } from './chat.gateway';
 import { MessagesService } from '../messages/messages.service';
+import { RoomsService } from '../rooms/rooms.service';
 import { ChatEvents } from './enums/chat-events.enum';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
   let messagesService: MessagesService;
+  let roomsService: RoomsService;
 
   const mockMessagesService = {
     createMessage: jest.fn(),
     deleteMessage: jest.fn(),
+  };
+
+  const mockRoomsService = {
+    checkRoomAccess: jest.fn(),
   };
 
   const mockServer = {
@@ -26,6 +32,8 @@ describe('ChatGateway', () => {
       headers: { authorization: 'Bearer mock-token' }
     },
     join: jest.fn(),
+    leave: jest.fn(),
+    rooms: new Set(['test-socket-id']),
     to: jest.fn().mockReturnThis(),
     emit: jest.fn(),
     disconnect: jest.fn(),
@@ -36,11 +44,12 @@ describe('ChatGateway', () => {
       providers: [
         ChatGateway,
         { provide: MessagesService, useValue: mockMessagesService },
+        { provide: RoomsService, useValue: mockRoomsService },
         {
           provide: JwtService,
           useValue: {
             verify: jest.fn(),
-            verifyAsync: jest.fn().mockReturnValue({ sub: 'user-123', username: 'Andrew' }),
+            verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-123', username: 'Andrew' }),
             sign: jest.fn()
           }
         },
@@ -49,6 +58,7 @@ describe('ChatGateway', () => {
 
     gateway = module.get<ChatGateway>(ChatGateway);
     messagesService = module.get<MessagesService>(MessagesService);
+    roomsService = module.get<RoomsService>(RoomsService);
     gateway.server = mockServer as any;
   });
 
@@ -77,27 +87,47 @@ describe('ChatGateway', () => {
   });
 
   describe('handleJoinRoom', () => {
-    it('should join the room and emit "User Joined"', () => {
-      const data = { room: 'general', username: 'Andrew' };
+    it('should leave old rooms, check access, join new room and emit "User Joined"', async () => {
+      const data = { roomId: 'room-123' };
 
-      gateway.handleJoinRoom(data, mockAuthenticatedSocket);
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'old-room']);
 
-      expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('general');
-      expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('general');
+      mockRoomsService.checkRoomAccess.mockResolvedValue(true);
 
+      await gateway.handleJoinRoom(data, mockAuthenticatedSocket);
+
+      expect(mockAuthenticatedSocket.leave).toHaveBeenCalledWith('old-room');
+      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith('user-123', 'room-123');
+      expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('room-123');
+      expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('room-123');
       expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(ChatEvents.USER_JOINED, {
         message: 'User Andrew has joined room',
+      });
+    });
+
+    it('should block access and emit ERROR if user is not in RoomMember table', async () => {
+      const data = { roomId: 'room-123' };
+
+      mockRoomsService.checkRoomAccess.mockResolvedValue(false);
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id']);
+
+      await gateway.handleJoinRoom(data, mockAuthenticatedSocket);
+
+      expect(mockAuthenticatedSocket.join).not.toHaveBeenCalled();
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('ERROR', {
+        message: 'Forbidden: You are not a member of this room'
       });
     });
   });
 
   describe('handleMessage', () => {
     it('should save message via service and emit to the room', async () => {
-      const data = { room: 'general', message: 'Hello logic!' };
+      const data = { roomId: 'room-123', message: 'Hello logic!' };
+
       const mockSavedMessage = {
         id: 'msg-1',
         message: data.message,
-        room: data.room,
+        roomId: data.roomId,
         user: { username: 'Andrew' },
       };
 
@@ -107,11 +137,11 @@ describe('ChatGateway', () => {
 
       expect(messagesService.createMessage).toHaveBeenCalledWith(
         'user-123',
-        'general',
+        'room-123',
         'Hello logic!'
       );
 
-      expect(mockServer.to).toHaveBeenCalledWith('general');
+      expect(mockServer.to).toHaveBeenCalledWith('room-123');
       expect(mockServer.emit).toHaveBeenCalledWith(ChatEvents.NEW_MESSAGE, mockSavedMessage);
     });
   });

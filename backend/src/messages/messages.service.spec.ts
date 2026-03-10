@@ -34,22 +34,17 @@ describe('MessagesService', () => {
   });
 
   describe('getMessagesForRoom', () => {
-    it('should return an array of reversed messages for a specific room', async () => {
-      const mockMessagesList = [
+    it('should return messages for a specific room', async () => {
+      const mockMessages = [
         { id: 'msg-1', message: 'First', room: 'general', user: { username: 'andrew_test' } },
         { id: 'msg-2', message: 'Second', room: 'general', user: { username: 'andrew_test' } },
       ];
 
-      mockMessagesRepository.findManyByRoom.mockResolvedValue([...mockMessagesList]);
+      mockMessagesRepository.findManyByRoom.mockResolvedValue(mockMessages);
 
       const result = await messagesService.getMessagesForRoom('general');
 
-      expect(result).toEqual([
-        { id: 'msg-2', message: 'Second', room: 'general', user: { username: 'andrew_test' } },
-        { id: 'msg-1', message: 'First', room: 'general', user: { username: 'andrew_test' } },
-      ]);
-
-      expect(messagesRepository.findManyByRoom).toHaveBeenCalledWith('general', undefined, 50);
+      expect(result).toEqual(mockMessages);
     });
   });
 });

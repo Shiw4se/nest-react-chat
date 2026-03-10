@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ChatEvents } from "./enums/chat-events.enum";
 import { MessagesService } from "../messages/messages.service";
 import { SendMessageDto } from "../messages/dto/send-message.dto";
+import { RoomsService } from "../rooms/rooms.service";
 
 interface AuthPayload {
   sub: string;
@@ -27,22 +28,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly jwtService: JwtService,
     private readonly messagesService: MessagesService,
+    private readonly roomsService: RoomsService,
   ) { }
 
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.split(' ')[1];
 
-      if (!token) {
-        throw new Error('No token provided');
-      }
+      if (!token) throw new Error('No token provided');
 
       const payload = await this.jwtService.verifyAsync(token, {
         secret: process.env.JWT_SECRET,
       });
 
       (client as AuthenticatedSocket).user = payload;
-
       console.log(`Client authenticated: ${payload.username} (${client.id})`);
     } catch (error) {
       console.error(`Connection rejected for ${client.id}: ${error.message}`);
@@ -55,16 +54,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage(ChatEvents.JOIN)
-  handleJoinRoom(
-    @MessageBody() data: { room: string, username: string },
+  async handleJoinRoom(
+    @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: AuthenticatedSocket
-  ): void {
-    const { username } = client.user;
-    client.join(data.room);
-    console.log(`${username} joined room ${data.room}`);
+  ): Promise<void> {
+    const { sub: userId, username } = client.user;
 
-    client.to(data.room).emit(ChatEvents.USER_JOINED, { message: `User ${username} has joined room` });
+    const currentRooms = Array.from(client.rooms);
+    currentRooms.forEach((room) => {
+      if (room !== client.id) client.leave(room);
+    });
+
+    const hasAccess = await this.roomsService.checkRoomAccess(userId, data.roomId);
+
+    if (!hasAccess) {
+      client.emit('ERROR', { message: 'Forbidden: You are not a member of this room' });
+      return;
+    }
+
+    client.join(data.roomId);
+    console.log(`${username} securely joined room ${data.roomId}`);
+
+    client.to(data.roomId).emit(ChatEvents.USER_JOINED, { message: `User ${username} has joined room` });
   }
+
 
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
@@ -74,23 +87,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const { sub: userId } = client.user;
 
     try {
-      const savedMessage = await this.messagesService.createMessage(userId, data.room, data.message);
+      const savedMessage = await this.messagesService.createMessage(userId, data.roomId, data.message);
 
-      this.server.to(data.room).emit(ChatEvents.NEW_MESSAGE, savedMessage);
-      console.log(`Message saved and sent to room ${data.room}`);
+      this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
     } catch (error) {
       console.error("Error saving message:", error);
+      client.emit('ERROR', { message: 'Failed to send message' });
     }
   }
 
   @SubscribeMessage(ChatEvents.TYPING)
   handleTyping(
-    @MessageBody() data: { room: string; isTyping: boolean },
+    @MessageBody() data: { roomId: string; isTyping: boolean },
     @ConnectedSocket() client: AuthenticatedSocket
   ) {
     const { username } = client.user;
 
-    client.to(data.room).emit(ChatEvents.USER_TYPING, {
+    client.to(data.roomId).emit(ChatEvents.USER_TYPING, {
       username,
       isTyping: data.isTyping
     });
@@ -98,7 +111,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.DELETE_MESSAGE)
   async handleDeleteMessage(
-    @MessageBody() data: { room: string; messageId: string },
+    @MessageBody() data: { roomId: string; messageId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     try {
@@ -106,7 +119,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       await this.messagesService.deleteMessage(data.messageId, userId);
 
-      this.server.to(data.room).emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
+      this.server.to(data.roomId).emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
     } catch (error) {
       client.emit('ERROR', { message: error.message });
     }
