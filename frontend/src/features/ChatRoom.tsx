@@ -22,9 +22,9 @@ export const ChatRoom: React.FC = () => {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.clearAuth);
   const { messages, typingUsers, clearMessages } = useChatStore();
-  
+
   const { activeRoomId, myRooms, publicRooms } = useRoomStore();
-  
+
   const [inputText, setInputText] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -62,18 +62,14 @@ export const ChatRoom: React.FC = () => {
 
     try {
       messageValidator.validate(text);
-
       const chunks = text.match(/[\s\S]{1,2000}/gu) || [];
-
       chunks.forEach((chunk) => {
         const payload = new MessageBuilder()
           .setRoom(activeRoomId)
           .setMessage(chunk)
           .build();
-
         sendMessage(payload);
       });
-
       setInputText('');
     } catch (error: any) {
       toast.error(error.message);
@@ -104,79 +100,79 @@ export const ChatRoom: React.FC = () => {
 
   if (!user) return null;
 
-  if (!activeRoomId) {
-    return (
-      <div className="flex-1 flex h-screen items-center justify-center bg-slate-900 text-slate-500 font-sans border-l border-slate-800">
-        <div className="text-center">
-          <div className="text-6xl mb-4 opacity-20">💬</div>
-          <p className="text-lg font-medium">{t('chat.select_to_start') || 'Select a chat to start messaging'}</p>
-        </div>
-      </div>
-    );
-  }
-
   const currentRoom = [...myRooms, ...publicRooms].find(r => r.id === activeRoomId);
-  const roomName = currentRoom?.name || 'Loading...';
+  const roomName = currentRoom?.name ?? '';
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-slate-900 text-slate-200 font-sans border-l border-slate-800">
+
       <div id="tour-header">
         <ChatHeader room={roomName} username={user.username} onLeave={handleLeave} />
       </div>
 
-      <main
-        id="tour-messages"
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 relative"
-        onScroll={handleScroll}
-      >
-        {isLoadingMore && (
-          <div className="text-center text-blue-400 text-xs py-2 animate-pulse font-bold">
-            Loading older messages...
+      {!activeRoomId ? (
+        <div className="flex-1 flex items-center justify-center text-slate-500">
+          <div className="text-center">
+            <div className="text-6xl mb-4 opacity-20">💬</div>
+            <p className="text-lg font-medium">{t('chat.select_to_start')}</p>
           </div>
-        )}
-
-        {messages.length === 0 && !isLoadingMore ? (
-          <div className="flex h-full items-center justify-center text-slate-500">
-            {t('chat.no_messages')}
-          </div>
-        ) : (
-          messages.map((msg, index) => (
-            <MessageBubble
-              key={index}
-              message={msg}
-              isMe={msg.user.username === user.username}
-              onDelete={() => handleDelete(msg.id)}
-            />
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </main>
-
-      <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
-        <TypingIndicator users={typingUsers} />
-
-        <div id="tour-input" className="flex gap-3 max-w-4xl mx-auto items-end">
-          <Input
-            multiline
-            value={inputText}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-              setInputText(e.target.value);
-              handleTyping();
-            }}
-            onEnterPress={onSend}
-            placeholder={t('chat.placeholder')}
-            className="flex-1"
-          />
-          <Button
-            onClick={onSend}
-            disabled={!inputText.trim()}
-            className="px-6 py-3 h-[48px]"
-          >
-            {t('chat.send')}
-          </Button>
         </div>
-      </footer>
+      ) : (
+        <>
+          <main
+            id="tour-messages"
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+            onScroll={handleScroll}
+          >
+            {isLoadingMore && (
+              <div className="text-center text-blue-400 text-xs py-2 animate-pulse font-bold">
+                {t('chat.loading')}
+              </div>
+            )}
+
+            {messages.length === 0 && !isLoadingMore ? (
+              <div className="flex h-full items-center justify-center text-slate-500">
+                {t('chat.no_messages')}
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <MessageBubble
+                  key={msg.id ?? `${msg.user.username}-${msg.createdAt}`}
+                  message={msg}
+                  isMe={msg.user.username === user.username}
+                  onDelete={() => handleDelete(msg.id)}
+                />
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </main>
+
+          <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
+            <TypingIndicator users={typingUsers} />
+            <div id="tour-input" className="flex gap-3 max-w-4xl mx-auto items-end">
+              <Input
+                multiline
+                value={inputText}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  setInputText(e.target.value);
+                  handleTyping();
+                }}
+                onEnterPress={onSend}
+                placeholder={t('chat.placeholder')}
+                className="flex-1"
+              />
+              <Button
+                onClick={onSend}
+                disabled={!inputText.trim()}
+                className="px-6 py-3 h-[48px]"
+              >
+                {t('chat.send')}
+              </Button>
+            </div>
+          </footer>
+        </>
+      )}
     </div>
   );
 };
