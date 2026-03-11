@@ -7,6 +7,7 @@ import { useRoomStore } from '../../../store/useRoomStore';
 import { RoomsApi } from '../../../api/services/roomsApi';
 import { ModalMode, type ModalModeType } from '../../../constants/modalMode';
 import { RoomVisibility, type RoomVisibilityType } from '../../../constants/roomVisibility';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 interface Props {
   isOpen: boolean;
@@ -22,8 +23,8 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [roomType, setRoomType] = useState<RoomVisibilityType>(RoomVisibility.PUBLIC);
   const [inviteToken, setInviteToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  if (!isOpen) return null;
+  
+  const modalRef = useFocusTrap(isOpen, onClose);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,17 +61,28 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div 
+        ref={modalRef}
+        className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto"
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold leading-none"
+          aria-label={t('common.close', 'Close')}
+          className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           &times;
         </button>
 
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+        <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">
           {mode === ModalMode.CREATE ? t('modal.create_title') : t('modal.join_title')}
         </h2>
 
@@ -78,14 +90,14 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <Button
             variant={mode === ModalMode.CREATE ? 'primary' : 'text'}
             onClick={() => setMode(ModalMode.CREATE)}
-            className="flex-1 text-sm py-1.5"
+            className="flex-1 text-sm py-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
           >
             {t('modal.create_tab')}
           </Button>
           <Button
             variant={mode === ModalMode.JOIN ? 'primary' : 'text'}
             onClick={() => setMode(ModalMode.JOIN)}
-            className="flex-1 text-sm py-1.5"
+            className="flex-1 text-sm py-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
           >
             {t('modal.join_tab')}
           </Button>
@@ -98,24 +110,26 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
               value={roomName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRoomName(e.target.value)}
               required
+              aria-required="true"
               maxLength={50}
+              className="focus:ring-2 focus:ring-blue-500 min-h-[44px]"
             />
             <div className="flex gap-4 items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer py-1">
                 <input
                   type="radio"
                   checked={roomType === RoomVisibility.PUBLIC}
                   onChange={() => setRoomType(RoomVisibility.PUBLIC)}
-                  className="accent-blue-500"
+                  className="accent-blue-500 w-4 h-4 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                 />
                 {t('modal.public_type')}
               </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer py-1">
                 <input
                   type="radio"
                   checked={roomType === RoomVisibility.PRIVATE}
                   onChange={() => setRoomType(RoomVisibility.PRIVATE)}
-                  className="accent-blue-500"
+                  className="accent-blue-500 w-4 h-4 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                 />
                 {t('modal.private_type')}
               </label>
@@ -125,7 +139,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 ? t('modal.public_hint')
                 : t('modal.private_hint')}
             </p>
-            <Button type="submit" className="w-full mt-2" disabled={isLoading || !roomName.trim()}>
+            <Button type="submit" className="w-full mt-2 min-h-[44px] focus:ring-2 focus:ring-blue-500" disabled={isLoading || !roomName.trim()}>
               {isLoading ? t('modal.creating') : t('modal.create_btn')}
             </Button>
           </form>
@@ -138,10 +152,12 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
               value={inviteToken}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteToken(e.target.value)}
               required
+              aria-required="true"
+              className="focus:ring-2 focus:ring-blue-500 min-h-[44px]"
             />
             <Button
               type="submit"
-              className="w-full mt-2"
+              className="w-full mt-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
               disabled={isLoading || !inviteToken.trim()}
             >
               {isLoading ? t('modal.joining') : t('modal.join_btn')}

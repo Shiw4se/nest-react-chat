@@ -4,6 +4,8 @@ import { persist } from 'zustand/middleware';
 interface UIState {
   hasSeenTour: Record<string, boolean>;
   setHasSeenTour: (userId: string) => void;
+  isSidebarOpen: boolean;
+  toggleSidebar: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -14,6 +16,9 @@ export const useUIStore = create<UIState>()(
         set((state) => ({
           hasSeenTour: { ...state.hasSeenTour, [userId]: true },
         })),
+      
+      isSidebarOpen: true,
+      toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
     }),
     {
       name: 'ui-storage',

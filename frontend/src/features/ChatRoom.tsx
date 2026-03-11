@@ -104,16 +104,20 @@ export const ChatRoom: React.FC = () => {
   const roomName = currentRoom?.name ?? '';
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-slate-900 text-slate-200 font-sans border-l border-slate-800">
-      <div id="tour-header">
+    <div className="flex-1 flex flex-col h-[100dvh] bg-slate-900 text-slate-200 font-sans md:border-l border-slate-800 w-full overflow-hidden">
+      <div id="tour-header" className="shrink-0">
         <ChatHeader room={roomName} username={user.username} onLeave={handleLeave} />
       </div>
 
       {!activeRoomId ? (
-        <div className="flex-1 flex items-center justify-center text-slate-500">
+        <div 
+          className="flex-1 flex items-center justify-center text-slate-500 p-4"
+          role="status"
+          aria-live="polite"
+        >
           <div className="text-center">
-            <div className="text-6xl mb-4 opacity-20">💬</div>
-            <p className="text-lg font-medium">{t('chat.select_to_start')}</p>
+            <div className="text-5xl sm:text-6xl mb-4 opacity-20" aria-hidden="true">💬</div>
+            <p className="text-base sm:text-lg font-medium">{t('chat.select_to_start')}</p>
           </div>
         </div>
       ) : (
@@ -121,17 +125,24 @@ export const ChatRoom: React.FC = () => {
           <main
             id="tour-messages"
             ref={chatContainerRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 relative"
+            className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 relative focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             onScroll={handleScroll}
+            tabIndex={0}
+            role="log"
+            aria-label={t('chat.messages_history', 'Message history')}
           >
             {isLoadingMore && (
-              <div className="text-center text-blue-400 text-xs py-2 animate-pulse font-bold">
+              <div 
+                className="text-center text-blue-400 text-xs py-2 animate-pulse font-bold"
+                role="status"
+                aria-live="polite"
+              >
                 {t('chat.loading')}
               </div>
             )}
 
             {messages.length === 0 && !isLoadingMore ? (
-              <div className="flex h-full items-center justify-center text-slate-500">
+              <div className="flex h-full items-center justify-center text-slate-500 text-sm sm:text-base p-4 text-center">
                 {t('chat.no_messages')}
               </div>
             ) : (
@@ -147,9 +158,9 @@ export const ChatRoom: React.FC = () => {
             <div ref={messagesEndRef} />
           </main>
 
-          <footer className="p-4 bg-slate-800 border-t border-slate-700 relative">
+          <footer className="p-3 sm:p-4 bg-slate-800 border-t border-slate-700 relative shrink-0">
             <TypingIndicator users={typingUsers} />
-            <div id="tour-input" className="flex gap-3 max-w-4xl mx-auto items-end">
+            <div id="tour-input" className="flex gap-2 sm:gap-3 max-w-4xl mx-auto items-end pb-safe">
               <Input
                 multiline
                 value={inputText}
@@ -159,9 +170,15 @@ export const ChatRoom: React.FC = () => {
                 }}
                 onEnterPress={onSend}
                 placeholder={t('chat.placeholder')}
-                className="flex-1"
+                className="flex-1 min-h-[44px] focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                aria-label={t('chat.message_input_label', 'Type a message')}
               />
-              <Button onClick={onSend} disabled={!inputText.trim()} className="px-6 py-3 h-[48px]">
+              <Button 
+                onClick={onSend} 
+                disabled={!inputText.trim()} 
+                className="px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] sm:h-[48px] focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+                aria-label={t('chat.send_button', 'Send message')}
+              >
                 {t('chat.send')}
               </Button>
             </div>
