@@ -44,9 +44,9 @@ describe('AuthService', () => {
   describe('login', () => {
     it('should throw UnauthorizedException if user is not found', async () => {
       mockUserRepository.findByUsername.mockResolvedValue(null);
-      await expect(authService.login('wrong_user', 'password123')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(
+        authService.login('wrong_user', 'password123'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should return a token for valid credentials', async () => {
@@ -61,7 +61,7 @@ describe('AuthService', () => {
       const result = await authService.login('andrew_test', 'password123');
 
       expect(result).toEqual({
-        accessToken: 'mock_jwt_token', 
+        accessToken: 'mock_jwt_token',
         user: {
           id: 'user-id-123',
           username: 'andrew_test',
@@ -77,7 +77,9 @@ describe('AuthService', () => {
         id: 'existing-id',
         username: 'andrew_test',
       });
-      await expect(authService.register('andrew_test', 'password123')).rejects.toThrow(Error);
+      await expect(
+        authService.register('andrew_test', 'password123'),
+      ).rejects.toThrow(Error);
     });
 
     it('should hash password and return user without password', async () => {

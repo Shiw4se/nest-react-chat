@@ -5,4 +5,4 @@ export const ModalMode = {
 } as const;
 
 // 2. Вытягиваем из него TypeScript-тип (этот код "сотрется" при сборке)
-export type ModalModeType = typeof ModalMode[keyof typeof ModalMode];
+export type ModalModeType = (typeof ModalMode)[keyof typeof ModalMode];

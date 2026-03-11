@@ -56,13 +56,9 @@ export const useRoomStore = create<RoomState>((set, get) => ({
       await get().fetchMyRooms();
       set({ activeRoomId: newRoom.id });
 
-      toast.success(
-        i18n.t('rooms.create_success', 'Room {{name}} created!', { name })
-      );
+      toast.success(i18n.t('rooms.create_success', 'Room {{name}} created!', { name }));
     } catch (error: any) {
-      toast.error(
-        i18n.t('rooms.create_error', 'Failed to create room')
-      );
+      toast.error(i18n.t('rooms.create_error', 'Failed to create room'));
     }
   },
 

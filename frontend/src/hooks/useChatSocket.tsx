@@ -12,7 +12,8 @@ import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
 import type { ChatMessagePayload } from '../types/message';
 
 export const useChatSocket = (user: UserData | null, roomId: string | null) => {
-  const { addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage } = useChatStore();
+  const { addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage } =
+    useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const chatInvoker = useRef(new ChatInvoker()).current;
@@ -87,7 +88,16 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
       socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
     };
-  }, [user, roomId, socket, addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage]);
+  }, [
+    user,
+    roomId,
+    socket,
+    addMessage,
+    setTyping,
+    setIsConnected,
+    setIsReconnecting,
+    removeMessage,
+  ]);
 
   const sendMessage = useCallback(
     (payload: ChatMessagePayload) => {

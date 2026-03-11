@@ -29,7 +29,7 @@ describe('ChatGateway', () => {
     user: { sub: 'user-123', username: 'Andrew' },
     handshake: {
       auth: { token: 'mock-token' },
-      headers: { authorization: 'Bearer mock-token' }
+      headers: { authorization: 'Bearer mock-token' },
     },
     join: jest.fn(),
     leave: jest.fn(),
@@ -49,9 +49,11 @@ describe('ChatGateway', () => {
           provide: JwtService,
           useValue: {
             verify: jest.fn(),
-            verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-123', username: 'Andrew' }),
-            sign: jest.fn()
-          }
+            verifyAsync: jest
+              .fn()
+              .mockResolvedValue({ sub: 'user-123', username: 'Andrew' }),
+            sign: jest.fn(),
+          },
         },
       ],
     }).compile();
@@ -73,15 +75,19 @@ describe('ChatGateway', () => {
   describe('handleConnection / handleDisconnect', () => {
     it('should log on connection', async () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      await gateway.handleConnection(mockAuthenticatedSocket as any);
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Client authenticated'));
+      await gateway.handleConnection(mockAuthenticatedSocket);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Client authenticated'),
+      );
       consoleSpy.mockRestore();
     });
 
     it('should log on disconnection', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      gateway.handleDisconnect(mockAuthenticatedSocket as any);
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Client disconnected'));
+      gateway.handleDisconnect(mockAuthenticatedSocket);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Client disconnected'),
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -97,12 +103,18 @@ describe('ChatGateway', () => {
       await gateway.handleJoinRoom(data, mockAuthenticatedSocket);
 
       expect(mockAuthenticatedSocket.leave).toHaveBeenCalledWith('old-room');
-      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith('user-123', 'room-123');
+      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith(
+        'user-123',
+        'room-123',
+      );
       expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith('room-123');
       expect(mockAuthenticatedSocket.to).toHaveBeenCalledWith('room-123');
-      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(ChatEvents.USER_JOINED, {
-        message: 'User Andrew has joined room',
-      });
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(
+        ChatEvents.USER_JOINED,
+        {
+          message: 'User Andrew has joined room',
+        },
+      );
     });
 
     it('should block access and emit ERROR if user is not in RoomMember table', async () => {
@@ -115,7 +127,7 @@ describe('ChatGateway', () => {
 
       expect(mockAuthenticatedSocket.join).not.toHaveBeenCalled();
       expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith('ERROR', {
-        message: 'Forbidden: You are not a member of this room'
+        message: 'Forbidden: You are not a member of this room',
       });
     });
   });
@@ -138,11 +150,14 @@ describe('ChatGateway', () => {
       expect(messagesService.createMessage).toHaveBeenCalledWith(
         'user-123',
         'room-123',
-        'Hello logic!'
+        'Hello logic!',
       );
 
       expect(mockServer.to).toHaveBeenCalledWith('room-123');
-      expect(mockServer.emit).toHaveBeenCalledWith(ChatEvents.NEW_MESSAGE, mockSavedMessage);
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        ChatEvents.NEW_MESSAGE,
+        mockSavedMessage,
+      );
     });
   });
 });

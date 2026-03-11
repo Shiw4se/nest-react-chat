@@ -8,4 +8,4 @@ import { RoomsModule } from 'src/rooms/rooms.module';
   imports: [AuthModule, MessagesModule, RoomsModule],
   providers: [ChatGateway],
 })
-export class ChatModule { }
+export class ChatModule {}

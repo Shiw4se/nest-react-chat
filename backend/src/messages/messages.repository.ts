@@ -9,8 +9,8 @@ export class MessagesRepository {
     return this.prisma.message.create({
       data: {
         message,
-        roomId, 
-        userId, 
+        roomId,
+        userId,
       },
       include: {
         user: { select: { username: true } },
@@ -23,7 +23,7 @@ export class MessagesRepository {
       take: limit,
       skip: cursor ? 1 : 0,
       ...(cursor && { cursor: { id: cursor } }),
-      where: { roomId }, 
+      where: { roomId },
       orderBy: { createdAt: 'desc' },
       include: {
         user: { select: { username: true } },

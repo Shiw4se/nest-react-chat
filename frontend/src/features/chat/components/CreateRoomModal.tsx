@@ -34,7 +34,9 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       onClose();
       setRoomName('');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || t('modal.create_error', 'Failed to create room'));
+      toast.error(
+        error.response?.data?.message || t('modal.create_error', 'Failed to create room'),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -100,16 +102,28 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
             />
             <div className="flex gap-4 items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700">
               <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="radio" checked={roomType === RoomVisibility.PUBLIC} onChange={() => setRoomType(RoomVisibility.PUBLIC)} className="accent-blue-500" />
+                <input
+                  type="radio"
+                  checked={roomType === RoomVisibility.PUBLIC}
+                  onChange={() => setRoomType(RoomVisibility.PUBLIC)}
+                  className="accent-blue-500"
+                />
                 {t('modal.public_type')}
               </label>
               <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="radio" checked={roomType === RoomVisibility.PRIVATE} onChange={() => setRoomType(RoomVisibility.PRIVATE)} className="accent-blue-500" />
+                <input
+                  type="radio"
+                  checked={roomType === RoomVisibility.PRIVATE}
+                  onChange={() => setRoomType(RoomVisibility.PRIVATE)}
+                  className="accent-blue-500"
+                />
                 {t('modal.private_type')}
               </label>
             </div>
             <p className="text-xs text-slate-400 px-1">
-              {roomType === RoomVisibility.PUBLIC ? t('modal.public_hint') : t('modal.private_hint')}
+              {roomType === RoomVisibility.PUBLIC
+                ? t('modal.public_hint')
+                : t('modal.private_hint')}
             </p>
             <Button type="submit" className="w-full mt-2" disabled={isLoading || !roomName.trim()}>
               {isLoading ? t('modal.creating') : t('modal.create_btn')}
@@ -125,7 +139,11 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteToken(e.target.value)}
               required
             />
-            <Button type="submit" className="w-full mt-2" disabled={isLoading || !inviteToken.trim()}>
+            <Button
+              type="submit"
+              className="w-full mt-2"
+              disabled={isLoading || !inviteToken.trim()}
+            >
               {isLoading ? t('modal.joining') : t('modal.join_btn')}
             </Button>
           </form>

@@ -15,7 +15,7 @@ export class DeleteMessageCommand implements ICommand {
 
   execute(): void {
     this.socket.emit(SOCKET_EVENTS.DELETE_MESSAGE, {
-      roomId: this.roomId,  
+      roomId: this.roomId,
       messageId: this.messageId,
     });
   }

@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from './user.repository';
@@ -8,7 +12,7 @@ export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
   async register(username: string, pass: string) {
     const userExists = await this.userRepository.findByUsername(username);
@@ -32,7 +36,7 @@ export class AuthService {
     const payload = { sub: user.id, username: user.username };
     return {
       accessToken: this.jwtService.sign(payload),
-      user: { id: user.id, username: user.username }
+      user: { id: user.id, username: user.username },
     };
   }
 }

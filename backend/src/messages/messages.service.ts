@@ -1,15 +1,23 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { MessagesRepository } from './messages.repository';
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly messagesRepository: MessagesRepository) { }
+  constructor(private readonly messagesRepository: MessagesRepository) {}
 
   async createMessage(userId: string, roomId: string, text: string) {
     return this.messagesRepository.create(userId, roomId, text);
   }
 
-  async getMessagesForRoom(roomId: string, cursor?: string, limit: number = 50) {
+  async getMessagesForRoom(
+    roomId: string,
+    cursor?: string,
+    limit: number = 50,
+  ) {
     return this.messagesRepository.findManyByRoom(roomId, cursor, limit);
   }
 

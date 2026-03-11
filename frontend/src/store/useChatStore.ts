@@ -46,7 +46,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
   removeMessage: (messageId) =>
     set((state) => ({
-      messages: state.messages.filter((msg) => msg.id !== messageId)
+      messages: state.messages.filter((msg) => msg.id !== messageId),
     })),
 
   clearMessages: () => set({ messages: [], typingUsers: [], hasMore: true }),

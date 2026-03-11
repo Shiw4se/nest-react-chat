@@ -3,7 +3,8 @@ import { messagesService } from '../api/services/messagesService';
 import { useChatStore } from '../store/useChatStore';
 
 export const useChatHistory = (room: string | null) => {
-  const { messages, setMessages, prependMessages, hasMore, setHasMore, clearMessages } = useChatStore();
+  const { messages, setMessages, prependMessages, hasMore, setHasMore, clearMessages } =
+    useChatStore();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const PAGE_LIMIT = 50;
 

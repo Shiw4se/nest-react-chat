@@ -41,7 +41,6 @@ export const JoinForm: React.FC = () => {
             required
           />
 
-
           <Button type="submit" className="w-full mt-2">
             {isRegisterMode ? t('auth.sign_up_btn') : t('auth.log_in_btn')}
           </Button>

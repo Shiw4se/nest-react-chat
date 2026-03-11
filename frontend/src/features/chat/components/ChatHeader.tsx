@@ -26,7 +26,7 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
 
   const activeRoom = useMemo(
     () => myRooms.find((r) => r.id === activeRoomId),
-    [myRooms, activeRoomId]
+    [myRooms, activeRoomId],
   );
 
   const canInvite = activeRoom?.type === 'PRIVATE' && activeRoom?.ownerId === currentUserId;
@@ -70,10 +70,11 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
                 key={lang}
                 variant="text"
                 onClick={() => i18n.changeLanguage(lang)}
-                className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all !no-underline ${i18n.language === lang
-                  ? '!bg-blue-600 !text-white'
-                  : '!text-slate-500 hover:!text-slate-300'
-                  }`}
+                className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all !no-underline ${
+                  i18n.language === lang
+                    ? '!bg-blue-600 !text-white'
+                    : '!text-slate-500 hover:!text-slate-300'
+                }`}
               >
                 {lang}
               </Button>

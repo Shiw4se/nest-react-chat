@@ -5,11 +5,12 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true
-  }
-  ));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    }),
+  );
 
   const configService = app.get(ConfigService);
   app.enableCors({
@@ -24,7 +25,7 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT');
   if (!port) {
-    throw new Error("PORT not defined in environment variables");
+    throw new Error('PORT not defined in environment variables');
   }
 
   await app.listen(port);

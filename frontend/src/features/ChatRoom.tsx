@@ -64,10 +64,7 @@ export const ChatRoom: React.FC = () => {
       messageValidator.validate(text);
       const chunks = text.match(/[\s\S]{1,2000}/gu) || [];
       chunks.forEach((chunk) => {
-        const payload = new MessageBuilder()
-          .setRoom(activeRoomId)
-          .setMessage(chunk)
-          .build();
+        const payload = new MessageBuilder().setRoom(activeRoomId).setMessage(chunk).build();
         sendMessage(payload);
       });
       setInputText('');
@@ -90,22 +87,24 @@ export const ChatRoom: React.FC = () => {
     }
   };
 
-  const handleDelete = useCallback((id?: string) => {
-    if (!id) {
-      toast.error('Cannot delete a message that is still sending');
-      return;
-    }
-    deleteMessage(id);
-  }, [deleteMessage]);
+  const handleDelete = useCallback(
+    (id?: string) => {
+      if (!id) {
+        toast.error('Cannot delete a message that is still sending');
+        return;
+      }
+      deleteMessage(id);
+    },
+    [deleteMessage],
+  );
 
   if (!user) return null;
 
-  const currentRoom = [...myRooms, ...publicRooms].find(r => r.id === activeRoomId);
+  const currentRoom = [...myRooms, ...publicRooms].find((r) => r.id === activeRoomId);
   const roomName = currentRoom?.name ?? '';
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-slate-900 text-slate-200 font-sans border-l border-slate-800">
-
       <div id="tour-header">
         <ChatHeader room={roomName} username={user.username} onLeave={handleLeave} />
       </div>
@@ -162,11 +161,7 @@ export const ChatRoom: React.FC = () => {
                 placeholder={t('chat.placeholder')}
                 className="flex-1"
               />
-              <Button
-                onClick={onSend}
-                disabled={!inputText.trim()}
-                className="px-6 py-3 h-[48px]"
-              >
+              <Button onClick={onSend} disabled={!inputText.trim()} className="px-6 py-3 h-[48px]">
                 {t('chat.send')}
               </Button>
             </div>

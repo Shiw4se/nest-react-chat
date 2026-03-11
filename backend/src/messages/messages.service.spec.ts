@@ -36,8 +36,18 @@ describe('MessagesService', () => {
   describe('getMessagesForRoom', () => {
     it('should return messages for a specific room', async () => {
       const mockMessages = [
-        { id: 'msg-1', message: 'First', room: 'general', user: { username: 'andrew_test' } },
-        { id: 'msg-2', message: 'Second', room: 'general', user: { username: 'andrew_test' } },
+        {
+          id: 'msg-1',
+          message: 'First',
+          room: 'general',
+          user: { username: 'andrew_test' },
+        },
+        {
+          id: 'msg-2',
+          message: 'Second',
+          room: 'general',
+          user: { username: 'andrew_test' },
+        },
       ];
 
       mockMessagesRepository.findManyByRoom.mockResolvedValue(mockMessages);

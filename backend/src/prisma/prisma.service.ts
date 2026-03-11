@@ -7,19 +7,19 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 @Injectable()
-export class PrismaService  extends PrismaClient implements OnModuleInit{
-    constructor() {
-        const pool =new Pool({
-            connectionString: process.env.DATABASE_URL,
-            ssl: {
-                rejectUnauthorized: false,
-            },
-        });
-        const adapter = new PrismaPg(pool);
-        super({ adapter });
-    }
-    async onModuleInit() {
-        await this.$connect();
-        console.log('Prisma connected to the database');
-    }
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  constructor() {
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    });
+    const adapter = new PrismaPg(pool);
+    super({ adapter });
+  }
+  async onModuleInit() {
+    await this.$connect();
+    console.log('Prisma connected to the database');
+  }
 }

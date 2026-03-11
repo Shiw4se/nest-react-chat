@@ -13,9 +13,7 @@ describe('MessagesController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MessagesController],
-      providers: [
-        { provide: MessagesService, useValue: mockMessagesService },
-      ],
+      providers: [{ provide: MessagesService, useValue: mockMessagesService }],
     })
       .overrideGuard(RoomAccessGuard)
       .useValue({ canActivate: () => true })
@@ -34,9 +32,17 @@ describe('MessagesController', () => {
       const mockParams = { roomId: 'room-123' };
       const mockQuery = { cursor: undefined, limit: 50 };
 
-      const result = await controller.getRoomMessages(mockReq, mockParams as any, mockQuery);
+      const result = await controller.getRoomMessages(
+        mockReq,
+        mockParams as any,
+        mockQuery,
+      );
 
-      expect(mockMessagesService.getMessagesForRoom).toHaveBeenCalledWith('room-123', undefined, 50);
+      expect(mockMessagesService.getMessagesForRoom).toHaveBeenCalledWith(
+        'room-123',
+        undefined,
+        50,
+      );
       expect(result).toEqual([]);
     });
   });

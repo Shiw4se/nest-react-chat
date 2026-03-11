@@ -1,4 +1,4 @@
 export interface ChatMessagePayload {
-    roomId: string; 
-    message: string;
+  roomId: string;
+  message: string;
 }

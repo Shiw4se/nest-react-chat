@@ -6,16 +6,16 @@ export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByUsername(username: string) {
-    return this.prisma.user.findUnique({ 
-      where: { username } 
+    return this.prisma.user.findUnique({
+      where: { username },
     });
   }
 
   async create(username: string, passwordHash: string) {
     return this.prisma.user.create({
-      data: { 
-        username, 
-        password: passwordHash 
+      data: {
+        username,
+        password: passwordHash,
       },
     });
   }

@@ -3,4 +3,4 @@ export const RoomVisibility = {
   PRIVATE: 'PRIVATE',
 } as const;
 
-export type RoomVisibilityType = typeof RoomVisibility[keyof typeof RoomVisibility];
+export type RoomVisibilityType = (typeof RoomVisibility)[keyof typeof RoomVisibility];

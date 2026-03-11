@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { RoomsService } from '../rooms.service';
 
 @Injectable()
@@ -7,7 +12,7 @@ export class RoomAccessGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    
+
     const userId = request.user?.userId;
     const roomId = request.params?.roomId;
 
@@ -20,11 +25,13 @@ export class RoomAccessGuard implements CanActivate {
     }
 
     const hasAccess = await this.roomsService.checkRoomAccess(userId, roomId);
-    
+
     if (!hasAccess) {
-      throw new ForbiddenException('You do not have access to read messages in this room');
+      throw new ForbiddenException(
+        'You do not have access to read messages in this room',
+      );
     }
 
-    return true; 
+    return true;
   }
 }

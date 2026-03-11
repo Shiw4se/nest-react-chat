@@ -75,8 +75,12 @@ export const Sidebar: React.FC = () => {
               >
                 <div className="font-bold text-slate-200 truncate">{room.name}</div>
                 <div className="text-xs text-slate-400 flex justify-between items-center">
-                  <span>{room.type === 'PUBLIC' ? t('chat.room_public') : t('chat.room_private')}</span>
-                  <span>{room._count?.members || 0} {t('chat.members')}</span>
+                  <span>
+                    {room.type === 'PUBLIC' ? t('chat.room_public') : t('chat.room_private')}
+                  </span>
+                  <span>
+                    {room._count?.members || 0} {t('chat.members')}
+                  </span>
                 </div>
               </div>
             ))
@@ -90,10 +94,7 @@ export const Sidebar: React.FC = () => {
         </div>
       </aside>
 
-      <CreateRoomModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      <CreateRoomModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </>
   );
 };

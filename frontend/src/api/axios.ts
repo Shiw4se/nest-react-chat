@@ -5,7 +5,7 @@ const api = axios.create({
   baseURL: `${import.meta.env.VITE_API_URL}/v1`,
   headers: {
     'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
+    Pragma: 'no-cache',
   },
 });
 
