@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthState>()(
         useChatStore.getState().clearMessages();
 
         const data = await authApi.login(username, password);
-        const token = data.access_token;
+        const token = data.accessToken;
         const user = { id: data.user.id, username: data.user.username } as UserData;
         set({ user, token });
       },
