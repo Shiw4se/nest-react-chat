@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -45,5 +45,11 @@ export class RoomsController {
   ) {
     const userId = req.user.userId;
     return this.roomsService.inviteByUsername(userId, roomId, username);
+  }
+
+  @Patch(':roomId/invite-token')
+  regenerateInviteToken(@Request() req, @Param('roomId') roomId: string) {
+    const userId = req.user.userId;
+    return this.roomsService.regenerateInviteToken(userId, roomId);
   }
 }

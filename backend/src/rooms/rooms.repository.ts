@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoomsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(ownerId: string, name: string, type: RoomType, inviteToken: string | null) {
     return this.prisma.$transaction(async (tx) => {
@@ -55,6 +55,13 @@ export class RoomsRepository {
       where: { userId_roomId: { userId, roomId } },
       update: {},
       create: { userId, roomId },
+    });
+  }
+
+  async updateToken(roomId: string, inviteToken: string) {
+    return this.prisma.room.update({
+      where: { id: roomId },
+      data: { inviteToken },
     });
   }
 }

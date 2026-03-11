@@ -10,7 +10,7 @@ export class RoomsService {
   constructor(
     private readonly roomsRepository: RoomsRepository,
     private readonly prisma: PrismaService,
-  ) {}
+  ) { }
 
   async create(userId: string, createRoomDto: CreateRoomDto) {
     const isPrivate = createRoomDto.type === RoomType.PRIVATE;
@@ -47,6 +47,24 @@ export class RoomsService {
     return { inviteToken: room.inviteToken };
   }
 
+  async regenerateInviteToken(userId: string, roomId: string) {
+    const room = await this.roomsRepository.findById(roomId);
+    if (!room) throw new NotFoundException('Room not found');
+
+    if (room.ownerId !== userId) {
+      throw new ForbiddenException('Only the owner can regenerate the invite token');
+    }
+
+    if (room.type !== RoomType.PRIVATE) {
+      throw new ForbiddenException('Only private rooms have invite tokens');
+    }
+
+    const newInviteToken = crypto.randomBytes(16).toString('base64url');
+    await this.roomsRepository.updateToken(roomId, newInviteToken);
+
+    return { inviteToken: newInviteToken };
+  }
+
   async inviteByUsername(ownerId: string, roomId: string, username: string) {
     const room = await this.roomsRepository.findById(roomId);
     if (!room) throw new NotFoundException('Room not found');
@@ -61,6 +79,7 @@ export class RoomsService {
     await this.roomsRepository.addMember(targetUser.id, roomId);
     return { message: `User "${username}" successfully invited` };
   }
+
 
   async checkRoomAccess(userId: string, roomId: string): Promise<boolean> {
     const room = await this.roomsRepository.findById(roomId);
