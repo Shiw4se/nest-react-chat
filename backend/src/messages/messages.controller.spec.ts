@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';
-import { RoomsService } from '../rooms/rooms.service';
+import { RoomAccessGuard } from '../rooms/guards/room-access.guard';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
@@ -10,18 +10,16 @@ describe('MessagesController', () => {
     getMessagesForRoom: jest.fn().mockResolvedValue([]),
   };
 
-  const mockRoomsService = {
-    checkRoomAccess: jest.fn().mockResolvedValue(true),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MessagesController],
       providers: [
         { provide: MessagesService, useValue: mockMessagesService },
-        { provide: RoomsService, useValue: mockRoomsService },
       ],
-    }).compile();
+    })
+      .overrideGuard(RoomAccessGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<MessagesController>(MessagesController);
   });
@@ -31,14 +29,13 @@ describe('MessagesController', () => {
   });
 
   describe('getRoomMessages', () => {
-    it('should return messages if user has access', async () => {
+    it('should return messages for a room', async () => {
       const mockReq = { user: { userId: 'user-123' } };
       const mockParams = { roomId: 'room-123' };
       const mockQuery = { cursor: undefined, limit: 50 };
 
       const result = await controller.getRoomMessages(mockReq, mockParams as any, mockQuery);
 
-      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith('user-123', 'room-123');
       expect(mockMessagesService.getMessagesForRoom).toHaveBeenCalledWith('room-123', undefined, 50);
       expect(result).toEqual([]);
     });
