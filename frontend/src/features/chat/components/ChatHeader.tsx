@@ -70,11 +70,10 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
                 key={lang}
                 variant="text"
                 onClick={() => i18n.changeLanguage(lang)}
-                className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all !no-underline ${
-                  i18n.language === lang
-                    ? '!bg-blue-600 !text-white'
-                    : '!text-slate-500 hover:!text-slate-300'
-                }`}
+                className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all !no-underline ${i18n.language === lang
+                  ? '!bg-blue-600 !text-white'
+                  : '!text-slate-500 hover:!text-slate-300'
+                  }`}
               >
                 {lang}
               </Button>
@@ -87,7 +86,7 @@ export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
               variant="text"
               className="text-xs px-3 py-1.5 border border-slate-600 hover:border-blue-500"
             >
-              + Invite
+              📋 {t('invite.btn', 'Invite')}
             </Button>
           )}
 
