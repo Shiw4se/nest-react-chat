@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
   const target = env.VITE_API_URL;
 
-  const wsTarget = target.replace(/^http/, 'ws');
+  const wsTarget = env.VITE_WS_URL;
 
   return {
     plugins: [react()],
