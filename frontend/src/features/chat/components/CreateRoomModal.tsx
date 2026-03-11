@@ -5,6 +5,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useRoomStore } from '../../../store/useRoomStore';
 import { RoomsApi } from '../../../api/services/roomsApi';
+import { ModalMode, type ModalModeType } from '../../../constants/modalMode';
+import { RoomVisibility, type RoomVisibilityType } from '../../../constants/roomVisibility';
 
 interface Props {
   isOpen: boolean;
@@ -15,9 +17,9 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
   const { createAndJoinRoom, fetchMyRooms, setActiveRoom } = useRoomStore();
 
-  const [mode, setMode] = useState<'create' | 'join'>('create');
+  const [mode, setMode] = useState<ModalModeType>(ModalMode.CREATE);
   const [roomName, setRoomName] = useState('');
-  const [roomType, setRoomType] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC');
+  const [roomType, setRoomType] = useState<RoomVisibilityType>(RoomVisibility.PUBLIC);
   const [inviteToken, setInviteToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -31,6 +33,8 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       await createAndJoinRoom(roomName, roomType);
       onClose();
       setRoomName('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('modal.create_error', 'Failed to create room'));
     } finally {
       setIsLoading(false);
     }
@@ -65,27 +69,27 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </button>
 
         <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          {mode === 'create' ? t('modal.create_title') : t('modal.join_title')}
+          {mode === ModalMode.CREATE ? t('modal.create_title') : t('modal.join_title')}
         </h2>
 
         <div className="flex gap-2 mb-6 bg-slate-900/50 p-1 rounded-lg">
           <Button
-            variant={mode === 'create' ? 'primary' : 'text'}
-            onClick={() => setMode('create')}
+            variant={mode === ModalMode.CREATE ? 'primary' : 'text'}
+            onClick={() => setMode(ModalMode.CREATE)}
             className="flex-1 text-sm py-1.5"
           >
             {t('modal.create_tab')}
           </Button>
           <Button
-            variant={mode === 'join' ? 'primary' : 'text'}
-            onClick={() => setMode('join')}
+            variant={mode === ModalMode.JOIN ? 'primary' : 'text'}
+            onClick={() => setMode(ModalMode.JOIN)}
             className="flex-1 text-sm py-1.5"
           >
             {t('modal.join_tab')}
           </Button>
         </div>
 
-        {mode === 'create' && (
+        {mode === ModalMode.CREATE && (
           <form onSubmit={handleCreate} className="space-y-4">
             <Input
               placeholder={t('modal.room_name_placeholder')}
@@ -96,16 +100,16 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
             />
             <div className="flex gap-4 items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700">
               <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="radio" checked={roomType === 'PUBLIC'} onChange={() => setRoomType('PUBLIC')} className="accent-blue-500" />
+                <input type="radio" checked={roomType === RoomVisibility.PUBLIC} onChange={() => setRoomType(RoomVisibility.PUBLIC)} className="accent-blue-500" />
                 {t('modal.public_type')}
               </label>
               <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-                <input type="radio" checked={roomType === 'PRIVATE'} onChange={() => setRoomType('PRIVATE')} className="accent-blue-500" />
+                <input type="radio" checked={roomType === RoomVisibility.PRIVATE} onChange={() => setRoomType(RoomVisibility.PRIVATE)} className="accent-blue-500" />
                 {t('modal.private_type')}
               </label>
             </div>
             <p className="text-xs text-slate-400 px-1">
-              {roomType === 'PUBLIC' ? t('modal.public_hint') : t('modal.private_hint')}
+              {roomType === RoomVisibility.PUBLIC ? t('modal.public_hint') : t('modal.private_hint')}
             </p>
             <Button type="submit" className="w-full mt-2" disabled={isLoading || !roomName.trim()}>
               {isLoading ? t('modal.creating') : t('modal.create_btn')}
@@ -113,7 +117,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </form>
         )}
 
-        {mode === 'join' && (
+        {mode === ModalMode.JOIN && (
           <form onSubmit={handleJoin} className="space-y-4">
             <Input
               placeholder={t('modal.token_placeholder')}

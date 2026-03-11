@@ -5,6 +5,7 @@ import { useChatStore } from '../store/useChatStore';
 export const useChatHistory = (room: string | null) => {
   const { messages, setMessages, prependMessages, hasMore, setHasMore, clearMessages } = useChatStore();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const PAGE_LIMIT = 50;
 
   useEffect(() => {
     if (!room) return;
@@ -15,7 +16,7 @@ export const useChatHistory = (room: string | null) => {
       .getHistory(room)
       .then((msgs) => {
         setMessages(msgs);
-        setHasMore(msgs.length === 50);
+        setHasMore(msgs.length === PAGE_LIMIT);
       })
       .catch((error) => console.error('Failed to load chat history:', error));
   }, [room]); 
@@ -31,7 +32,7 @@ export const useChatHistory = (room: string | null) => {
       if (olderMessages.length > 0) {
         prependMessages(olderMessages);
       }
-      if (olderMessages.length < 50) {
+      if (olderMessages.length < PAGE_LIMIT) {
         setHasMore(false);
       }
     } catch (error) {
