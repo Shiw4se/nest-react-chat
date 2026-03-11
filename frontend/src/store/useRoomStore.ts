@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { RoomsApi } from '../api/services/roomsApi';
 import toast from 'react-hot-toast';
+import { RoomsApi } from '../api/services/roomsApi';
 import type { Room } from '../types/room';
+import i18n from '../config/i18n';
 
 interface RoomState {
   myRooms: Room[];
@@ -27,7 +28,7 @@ export const useRoomStore = create<RoomState>((set, get) => ({
       const rooms = await RoomsApi.getMyRooms();
       set({ myRooms: rooms });
     } catch (error: any) {
-      toast.error('Failed to load your chats');
+      toast.error(i18n.t('rooms.fetch_error', 'Failed to load your rooms'));
     } finally {
       set({ isLoading: false });
     }
@@ -39,7 +40,7 @@ export const useRoomStore = create<RoomState>((set, get) => ({
       const rooms = await RoomsApi.getPublicRooms();
       set({ publicRooms: rooms });
     } catch (error: any) {
-      toast.error('Failed to load public chats');
+      toast.error(i18n.t('rooms.fetch_error', 'Failed to load public rooms'));
     } finally {
       set({ isLoading: false });
     }
@@ -54,9 +55,14 @@ export const useRoomStore = create<RoomState>((set, get) => ({
       const newRoom = await RoomsApi.createRoom(name, type);
       await get().fetchMyRooms();
       set({ activeRoomId: newRoom.id });
-      toast.success(`Room ${name} created!`);
+
+      toast.success(
+        i18n.t('rooms.create_success', 'Room {{name}} created!', { name })
+      );
     } catch (error: any) {
-      toast.error('Failed to create room');
+      toast.error(
+        i18n.t('rooms.create_error', 'Failed to create room')
+      );
     }
   },
 

@@ -90,5 +90,10 @@
     "sidebar_rooms_desc": "Click any room to open it and start chatting.",
     "create_room_title": "Create or Join",
     "create_room_desc": "Create a new room or join a private one using an invite token."
+  },
+  "rooms": {
+    "fetch_error": "Failed to load your rooms",
+    "create_success": "Room {{name}} created!",
+    "create_error": "Failed to create room"
   }
 }
