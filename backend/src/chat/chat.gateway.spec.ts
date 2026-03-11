@@ -27,7 +27,7 @@ describe('ChatGateway', () => {
 
   const mockAuthenticatedSocket = {
     id: 'test-socket-id',
-    user: { sub: 'user-123', username: 'Andrew' },
+    user: { id: 'user-123', username: 'Andrew' },
     handshake: {
       auth: { token: 'mock-token' },
       headers: { authorization: 'Bearer mock-token' },
@@ -52,7 +52,7 @@ describe('ChatGateway', () => {
             verify: jest.fn(),
             verifyAsync: jest
               .fn()
-              .mockResolvedValue({ sub: 'user-123', username: 'Andrew' }),
+              .mockResolvedValue({ id: 'user-123', username: 'Andrew' }),
             sign: jest.fn(),
           },
         },
