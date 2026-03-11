@@ -2,16 +2,17 @@ import { useEffect } from 'react';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { useTranslation } from 'react-i18next';
+import { useUIStore } from '../store/useUIStore';
 
 export const useChatTour = (isEnabled: boolean, userId?: string) => {
   const { t } = useTranslation();
 
+  const { hasSeenTour, setHasSeenTour } = useUIStore();
+
   useEffect(() => {
     if (!isEnabled || !userId) return;
 
-    const storageKey = `chat-tour-seen-${userId}`;
-    const hasSeenTour = localStorage.getItem(storageKey);
-    if (hasSeenTour) return;
+    if (hasSeenTour[userId]) return;
 
     const driverObj = driver({
       showProgress: true,
@@ -20,7 +21,7 @@ export const useChatTour = (isEnabled: boolean, userId?: string) => {
       prevBtnText: t('tour.prevBtnText'),
       doneBtnText: t('tour.doneBtnText'),
       onDestroyed: () => {
-        localStorage.setItem(storageKey, 'true');
+        setHasSeenTour(userId);
       },
       steps: [
         {
@@ -85,5 +86,5 @@ export const useChatTour = (isEnabled: boolean, userId?: string) => {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [isEnabled, userId, t]);
+  }, [isEnabled, userId, t, hasSeenTour, setHasSeenTour]);
 };
