@@ -72,7 +72,8 @@
     "invite_btn": "招待する",
     "invite_success": "ユーザーを招待しました！",
     "invite_error": "ユーザーの招待に失敗しました",
-    "token_error": "招待リンクの取得に失敗しました"
+    "token_error": "招待リンクの取得に失敗しました",
+    "regenerate_success": "トークンが再生成されました！古いリンクは無効になります。"
   },
   "tour": {
     "header_title": "ルームヘッダー",

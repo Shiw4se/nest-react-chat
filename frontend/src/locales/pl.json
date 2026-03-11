@@ -72,7 +72,8 @@
     "invite_btn": "Zaproś użytkownika",
     "invite_success": "Użytkownik zaproszony pomyślnie!",
     "invite_error": "Nie udało się zaprosić użytkownika",
-    "token_error": "Nie udało się pobrać linku zaproszenia"
+    "token_error": "Nie udało się pobrać linku zaproszenia",
+    "regenerate_success": "Token został odnowiony! Stare linki są teraz nieważne."
   },
   "tour": {
     "header_title": "Nagłówek pokoju",

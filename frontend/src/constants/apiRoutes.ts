@@ -13,5 +13,6 @@ export const API_ROUTES = {
     JOIN: (token: string) => `/rooms/join/${token}`,
     INVITE_TOKEN: (roomId: string) => `/rooms/${roomId}/invite-token`,
     INVITE_USER: (roomId: string) => `/rooms/${roomId}/invite-user`,
+    REGENERATE_INVITE_TOKEN: (roomId: string) => `/rooms/${roomId}/invite-token`,
   },
 };

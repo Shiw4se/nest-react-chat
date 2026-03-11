@@ -32,4 +32,9 @@ export const RoomsApi = {
     const { data } = await axios.post(API_ROUTES.ROOMS.INVITE_USER(roomId), { username });
     return data;
   },
+
+  regenerateInviteToken: async (roomId: string) => {
+    const response = await axios.patch(API_ROUTES.ROOMS.REGENERATE_INVITE_TOKEN(roomId));
+    return response.data;
+  },
 };

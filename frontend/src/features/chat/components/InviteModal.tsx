@@ -31,6 +31,21 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
     }
   };
 
+  const handleRegenerateLink = async () => {
+    setIsLoading(true);
+    try {
+      const res = await RoomsApi.regenerateInviteToken(roomId);
+      setInviteToken(res.inviteToken);
+      toast.success(
+        t('invite.regenerate_success', 'Token regenerated! Old links are now invalid.'),
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || t('invite.token_error'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   React.useEffect(() => {
     if (isOpen && mode === 'link' && !inviteToken) {
       handleGetLink();
@@ -80,10 +95,18 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
         <h2 className="text-2xl font-bold text-white mb-6 text-center">{t('invite.title')}</h2>
 
         <div className="flex gap-2 mb-6 bg-slate-900/50 p-1 rounded-lg">
-          <Button variant={mode === 'link' ? 'primary' : 'text'} onClick={() => handleSwitchMode('link')} className="flex-1 text-sm py-1.5">
+          <Button
+            variant={mode === 'link' ? 'primary' : 'text'}
+            onClick={() => handleSwitchMode('link')}
+            className="flex-1 text-sm py-1.5"
+          >
             {t('invite.link_tab')}
           </Button>
-          <Button variant={mode === 'username' ? 'primary' : 'text'} onClick={() => handleSwitchMode('username')} className="flex-1 text-sm py-1.5">
+          <Button
+            variant={mode === 'username' ? 'primary' : 'text'}
+            onClick={() => handleSwitchMode('username')}
+            className="flex-1 text-sm py-1.5"
+          >
             {t('invite.username_tab')}
           </Button>
         </div>
@@ -92,16 +115,26 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
           <div className="space-y-3">
             <p className="text-slate-400 text-sm">{t('invite.link_hint')}</p>
             {isLoading ? (
-              <div className="text-center text-slate-500 animate-pulse py-4">{t('invite.loading_token')}</div>
+              <div className="text-center text-slate-500 animate-pulse py-4">
+                {t('invite.loading_token')}
+              </div>
             ) : inviteToken ? (
               <div className="flex gap-2">
                 <input
                   readOnly
                   value={inviteToken}
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-300 text-sm font-mono truncate"
+                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-slate-300 text-sm font-mono truncate outline-none"
                 />
                 <Button onClick={handleCopyLink} className="px-4 shrink-0">
                   {t('invite.copy_btn')}
+                </Button>
+                <Button
+                  onClick={handleRegenerateLink}
+                  variant="text"
+                  className="px-3 shrink-0 text-slate-400 hover:text-red-400"
+                  title="Revoke and generate new token"
+                >
+                  🔄
                 </Button>
               </div>
             ) : (

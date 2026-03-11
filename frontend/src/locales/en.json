@@ -72,7 +72,8 @@
     "invite_btn": "Invite User",
     "invite_success": "User invited successfully!",
     "invite_error": "Failed to invite user",
-    "token_error": "Failed to get invite link"
+    "token_error": "Failed to get invite link",
+    "regenerate_success": "Token regenerated! Old links are now invalid."
   },
   "tour": {
     "header_title": "Room Header",
