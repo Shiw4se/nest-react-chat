@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesService } from './messages.service';
 import { MessagesRepository } from './messages.repository';

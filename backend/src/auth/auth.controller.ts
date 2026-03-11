@@ -15,6 +15,7 @@ import {
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthDto } from './dto/auth.dto';
+import type { RequestWithUser } from './interfaces/auth.interfaces';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -52,7 +53,7 @@ export class AuthController {
     description: 'Returns the authenticated user data',
   })
   @ApiResponse({ status: 401, description: 'Token is missing or invalid' })
-  getMe(@Request() req) {
+  getMe(@Request() req: RequestWithUser) {
     return req.user;
   }
 }

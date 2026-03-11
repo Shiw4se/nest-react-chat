@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from './messages.controller';
 import { MessagesService } from './messages.service';

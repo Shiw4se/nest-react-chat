@@ -13,15 +13,7 @@ import { ChatEvents } from './enums/chat-events.enum';
 import { MessagesService } from '../messages/messages.service';
 import { SendMessageDto } from '../messages/dto/send-message.dto';
 import { RoomsService } from '../rooms/rooms.service';
-
-interface AuthPayload {
-  sub: string;
-  username: string;
-}
-
-interface AuthenticatedSocket extends Socket {
-  user: AuthPayload;
-}
+import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
 @WebSocketGateway({
   cors: {
@@ -41,20 +33,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     try {
+      const authHeader = client.handshake.headers?.authorization;
       const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.split(' ')[1];
+        (client.handshake.auth?.token as string) || authHeader?.split(' ')[1];
 
       if (!token) throw new Error('No token provided');
 
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync<
+        AuthenticatedSocket['user']
+      >(token, {
         secret: process.env.JWT_SECRET,
       });
 
       (client as AuthenticatedSocket).user = payload;
       console.log(`Client authenticated: ${payload.username} (${client.id})`);
     } catch (error) {
-      console.error(`Connection rejected for ${client.id}: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Connection rejected for ${client.id}: ${errorMessage}`);
       client.disconnect();
     }
   }
@@ -68,12 +64,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { roomId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ): Promise<void> {
-    const { sub: userId, username } = client.user;
+    const { id: userId, username } = client.user;
 
     const currentRooms = Array.from(client.rooms);
-    currentRooms.forEach((room) => {
-      if (room !== client.id) client.leave(room);
-    });
+
+    for (const room of currentRooms) {
+      if (room !== client.id) {
+        await client.leave(room);
+      }
+    }
 
     const hasAccess = await this.roomsService.checkRoomAccess(
       userId,
@@ -87,7 +86,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
 
-    client.join(data.roomId);
+    await client.join(data.roomId);
     console.log(`${username} securely joined room ${data.roomId}`);
 
     client.to(data.roomId).emit(ChatEvents.USER_JOINED, {
@@ -100,7 +99,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: SendMessageDto,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
-    const { sub: userId } = client.user;
+    const { id: userId } = client.user;
 
     try {
       const savedMessage = await this.messagesService.createMessage(
@@ -111,7 +110,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
     } catch (error) {
-      console.error('Error saving message:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error saving message:', errorMessage);
       client.emit('ERROR', { message: 'Failed to send message' });
     }
   }
@@ -135,7 +136,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     try {
-      const { sub: userId } = client.user;
+      const { id: userId } = client.user;
 
       await this.messagesService.deleteMessage(data.messageId, userId);
 
@@ -143,7 +144,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(data.roomId)
         .emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
     } catch (error) {
-      client.emit('ERROR', { message: error.message });
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete message';
+      client.emit('ERROR', { message: errorMessage });
     }
   }
 }
