@@ -12,14 +12,18 @@ export const useChatHistory = (room: string | null) => {
 
     clearMessages();
 
-    messagesService
-      .getHistory(room)
-      .then((msgs) => {
+    const fetchHistory = async () => {
+      try {
+        const msgs = await messagesService.getHistory(room);
         setMessages(msgs);
         setHasMore(msgs.length === PAGE_LIMIT);
-      })
-      .catch((error) => console.error('Failed to load chat history:', error));
-  }, [room]); 
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    };
+
+    fetchHistory();
+  }, [room]);
 
   const loadMore = useCallback(async () => {
     if (!room || isLoadingMore || !hasMore || messages.length === 0) return;
