@@ -1,79 +1,152 @@
-import { MessageBody, SubscribeMessage, WebSocketGateway,
-   WebSocketServer, OnGatewayConnection, OnGatewayDisconnect, ConnectedSocket } from "@nestjs/websockets";
-import{ Server, Socket } from "socket.io";
-import { PrismaService } from "../prisma/prisma.service";
-import { UseGuards } from "@nestjs/common";
-import { WsJwtGuard } from "src/auth/guards/ws-jwt.guard";
+import {
+  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  ConnectedSocket,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { ChatEvents } from './enums/chat-events.enum';
+import { MessagesService } from '../messages/messages.service';
+import { SendMessageDto } from '../messages/dto/send-message.dto';
+import { RoomsService } from '../rooms/rooms.service';
+import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
-interface AuthPayload {
-  userId: string;
-  username: string;
-}
-
-interface AuthenticatedSocket extends Socket {
-  user: AuthPayload;
-}
-
-@UseGuards(WsJwtGuard) 
-@WebSocketGateway({ 
+@WebSocketGateway({
   cors: {
-    origin: "*",
+    origin: '*',
+    credentials: true,
   },
 })
-
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly messagesService: MessagesService,
+    private readonly roomsService: RoomsService,
+  ) {}
 
-  handleConnection(client: Socket) {
-    // handle new connection
-    console.log(`Client connected: ${client.id}`);
+  async handleConnection(client: Socket) {
+    try {
+      const authHeader = client.handshake.headers?.authorization;
+      const token =
+        (client.handshake.auth?.token as string) || authHeader?.split(' ')[1];
+
+      if (!token) throw new Error('No token provided');
+
+      const payload = await this.jwtService.verifyAsync<
+        AuthenticatedSocket['user']
+      >(token, {
+        secret: process.env.JWT_SECRET,
+      });
+
+      (client as AuthenticatedSocket).user = payload;
+      console.log(`Client authenticated: ${payload.username} (${client.id})`);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Connection rejected for ${client.id}: ${errorMessage}`);
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket) {
-    // handle disconnection
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  @SubscribeMessage("join")
-  HandleJoinRoom(
-    @MessageBody() data: {room: string, username: string}, 
-    @ConnectedSocket() client: AuthenticatedSocket
-) :void{
-    const { username } = client.user;
-    client.join(data.room);
-    console.log(`${username} joined room ${data.room}`);
-    client.to(data.room)
-    .emit("User Joined",
-      {message: `User ${username} has joined room`});
-  }
-    
-  
-  @SubscribeMessage("SendMessage")
-  async handleMessage(
-    @MessageBody() data: {room: string, message: string}, 
-    @ConnectedSocket() client: AuthenticatedSocket
-) {
+  @SubscribeMessage(ChatEvents.JOIN)
+  async handleJoinRoom(
+    @MessageBody() data: { roomId: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<void> {
+    const { id: userId, username } = client.user;
 
-    const { userId } = client.user;
-    const savedMessage = await this.prisma.message.create({
-      data: {
-       message: data.message,
-       userId: userId,
-        room: data.room,
-      },
-      include: {
-        user: {
-          select: {username: true }
+    const currentRooms = Array.from(client.rooms);
+
+    for (const room of currentRooms) {
+      if (room !== client.id) {
+        await client.leave(room);
       }
+    }
 
-      },
+    const hasAccess = await this.roomsService.checkRoomAccess(
+      userId,
+      data.roomId,
+    );
 
+    if (!hasAccess) {
+      client.emit('ERROR', {
+        message: 'Forbidden: You are not a member of this room',
+      });
+      return;
+    }
+
+    await client.join(data.roomId);
+    console.log(`${username} securely joined room ${data.roomId}`);
+
+    client.to(data.roomId).emit(ChatEvents.USER_JOINED, {
+      message: `User ${username} has joined room`,
     });
-    this.server.to(data.room).emit("newMessage", savedMessage);
-    console.log(`Message saved and sent to room ${data.room}`);
-}
-}
+  }
 
+  @SubscribeMessage(ChatEvents.SEND_MESSAGE)
+  async handleMessage(
+    @MessageBody() data: SendMessageDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    const { id: userId } = client.user;
+
+    try {
+      const savedMessage = await this.messagesService.createMessage(
+        userId,
+        data.roomId,
+        data.message,
+      );
+
+      this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error saving message:', errorMessage);
+      client.emit('ERROR', { message: 'Failed to send message' });
+    }
+  }
+
+  @SubscribeMessage(ChatEvents.TYPING)
+  handleTyping(
+    @MessageBody() data: { roomId: string; isTyping: boolean },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    const { username } = client.user;
+
+    client.to(data.roomId).emit(ChatEvents.USER_TYPING, {
+      username,
+      isTyping: data.isTyping,
+    });
+  }
+
+  @SubscribeMessage(ChatEvents.DELETE_MESSAGE)
+  async handleDeleteMessage(
+    @MessageBody() data: { roomId: string; messageId: string },
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    try {
+      const { id: userId } = client.user;
+
+      await this.messagesService.deleteMessage(data.messageId, userId);
+
+      this.server
+        .to(data.roomId)
+        .emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete message';
+      client.emit('ERROR', { message: errorMessage });
+    }
+  }
+}

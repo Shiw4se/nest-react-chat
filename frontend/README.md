@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+## <p align="center">
+##  A real-time chat frontend built with React, Vite, and Zustand.
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+## Description
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This is the frontend repository for a Full-stack Real-time Chat application. It handles user interface rendering, JWT-based authentication state, and real-time bidirectional communication using the Socket.IO client. The application is built with a strong focus on Clean Architecture and strictly follows the Flux pattern for state management.
 
-## React Compiler
+## Tech Stack
+* **Framework:** React (Vite)
+* **State Management:** Zustand (Flux Architecture)
+* **Real-time:** Socket.IO Client
+* **Styling:** Tailwind CSS
+* **API Client:** Axios
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Install dependencies:
+```bash
+npm install
+```
+2. Configure environment variables (optional):
+```bash
+cp .env.example .env
+# Open .env and add your backend API URL (e.g., VITE_API_URL=http://localhost:3000)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project Setup
+```bash
+# development mode (with hot-module replacement)
+npm run dev
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+# build for production
+npm run build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# preview production build
+npm run preview
 ```
+
+## Application Reference
+
+### State Management (Zustand Stores)
+
+| Store | Purpose | Key State Variables |
+| :--- | :--- | :--- |
+| `useAuthStore` | Manages user authentication and JWT token persistence | `user`, `token` |
+| `useChatStore` | Manages chat history, typing indicators, and connection status | `messages`, `typingUsers`, `isConnected`, `isReconnecting` |
+
+### WebSocket Events (Socket.IO Client)
+
+* **Connection:** Automatically connects with the JWT token in the auth payload upon successful login.
+* **`join` (Emit):** Sent to subscribe the user to a specific chat room after authentication.
+  * Payload: `{ "room": "general", "username": "Andrew" }`
+* **`SendMessage` (Emit):** Sent when the user submits a new message in the chat room.
+  * Payload: `{ "room": "general", "message": "Hello world!" }`
+* **`typing` (Emit):** Sent to notify others in the room when the user starts or stops typing.
+  * Payload: `{ "room": "general", "isTyping": true }`
+* **`newMessage` (Listen):** Received from the server to update the local chat history in real-time.
+* **`userTyping` (Listen):** Received from the server to show or hide the "User is typing..." indicator.
