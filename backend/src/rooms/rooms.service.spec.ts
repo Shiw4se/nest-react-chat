@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoomsService } from './rooms.service';
-import { RoomsRepository } from './rooms.repository';
+import { CachedRoomsRepository } from './cached-rooms.repository';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('RoomsService', () => {
@@ -24,8 +24,14 @@ describe('RoomsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RoomsService,
-        { provide: RoomsRepository, useValue: mockRoomsRepository },
-        { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: CachedRoomsRepository,
+          useValue: mockRoomsRepository
+        },
+        {
+          provide: PrismaService,
+          useValue: mockPrismaService
+        },
       ],
     }).compile();
 
