@@ -6,21 +6,14 @@ import { PrismaService } from '../prisma/prisma.service';
 export class RoomsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(
-    ownerId: string,
-    name: string,
-    type: RoomType,
-    inviteToken: string | null,
-  ) {
+  async create(ownerId: string, name: string, type: RoomType, inviteToken: string | null) {
     return this.prisma.$transaction(async (tx) => {
       const room = await tx.room.create({
         data: { name, type, inviteToken, ownerId },
       });
-
       await tx.roomMember.create({
         data: { roomId: room.id, userId: ownerId },
       });
-
       return room;
     });
   }
@@ -55,18 +48,20 @@ export class RoomsRepository {
     });
   }
 
-  async addMember(userId: string, roomId: string) {
-    return this.prisma.roomMember.upsert({
-      where: { userId_roomId: { userId, roomId } },
-      update: {},
-      create: { userId, roomId },
-    });
-  }
-
   async updateToken(roomId: string, inviteToken: string) {
     return this.prisma.room.update({
       where: { id: roomId },
       data: { inviteToken },
+    });
+  }
+
+  async addMember(userId: string, roomId: string) {
+    const existing = await this.prisma.roomMember.findUnique({
+      where: { userId_roomId: { userId, roomId } },
+    });
+    if (existing) return existing;
+    return this.prisma.roomMember.create({
+      data: { userId, roomId },
     });
   }
 }
