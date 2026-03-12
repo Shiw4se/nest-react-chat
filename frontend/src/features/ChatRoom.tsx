@@ -1,44 +1,38 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
-import { useAuthStore } from '../store/useAuthStore';
-import { useChatStore } from '../store/useChatStore';
-import { useChatSocket } from '../hooks/useChatSocket';
-import { useChatHistory } from '../hooks/useChatHistory';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { MessageBubble } from '../components/ui/MessageBubble';
 import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
-import { useTranslation } from 'react-i18next';
-import { WebSocketManager } from '../websockets/services/WebSocketManager';
-import { MessageBuilder } from '../websockets/builders/MessageBuilder';
-import { MessageValidatorContext, BasicValidator } from '../websockets/strategies/MessageValidator';
 import { useChatTour } from '../hooks/useChatTour';
-import { useRoomStore } from '../store/useRoomStore';
+import { useChatFacade } from '../hooks/useChatFacade';
 
 export const ChatRoom: React.FC = () => {
   const { t } = useTranslation();
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.clearAuth);
-  const { messages, typingUsers, clearMessages } = useChatStore();
 
-  const { activeRoomId, myRooms, publicRooms } = useRoomStore();
+  const {
+    user,
+    messages,
+    typingUsers,
+    activeRoomId,
+    currentRoom,
+    isLoadingMore,
+    sendMessage,
+    leaveChat,
+    handleTyping,
+    deleteMessage,
+    loadMore,
+  } = useChatFacade();
 
   const [inputText, setInputText] = useState('');
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [oldScrollHeight, setOldScrollHeight] = useState<number | null>(null);
 
-  const { loadMore, isLoadingMore } = useChatHistory(activeRoomId);
-  const { sendMessage, handleTyping, deleteMessage } = useChatSocket(user, activeRoomId);
-
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
-
-  const messageValidator = useMemo(() => {
-    return new MessageValidatorContext(new BasicValidator());
-  }, []);
 
   useChatTour(!!user, user?.username);
 
@@ -58,26 +52,15 @@ export const ChatRoom: React.FC = () => {
 
   const onSend = useCallback(() => {
     const text = inputText.trim();
-    if (!text || !activeRoomId) return;
+    if (!text) return;
 
-    try {
-      messageValidator.validate(text);
-      const chunks = text.match(/[\s\S]{1,2000}/gu) || [];
-      chunks.forEach((chunk) => {
-        const payload = new MessageBuilder().setRoom(activeRoomId).setMessage(chunk).build();
-        sendMessage(payload);
-      });
+    const { success, error } = sendMessage(text);
+    if (success) {
       setInputText('');
-    } catch (error: any) {
-      toast.error(error.message);
+    } else if (error) {
+      toast.error(error);
     }
-  }, [inputText, sendMessage, activeRoomId, messageValidator]);
-
-  const handleLeave = useCallback(() => {
-    WebSocketManager.getInstance().disconnect();
-    clearMessages();
-    logout();
-  }, [clearMessages, logout]);
+  }, [inputText, sendMessage]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -100,17 +83,16 @@ export const ChatRoom: React.FC = () => {
 
   if (!user) return null;
 
-  const currentRoom = [...myRooms, ...publicRooms].find((r) => r.id === activeRoomId);
   const roomName = currentRoom?.name ?? '';
 
   return (
     <div className="flex-1 flex flex-col h-[100dvh] bg-slate-900 text-slate-200 font-sans md:border-l border-slate-800 w-full overflow-hidden">
       <div id="tour-header" className="shrink-0">
-        <ChatHeader room={roomName} username={user.username} onLeave={handleLeave} />
+        <ChatHeader room={roomName} username={user.username} onLeave={leaveChat} />
       </div>
 
       {!activeRoomId ? (
-        <div 
+        <div
           className="flex-1 flex items-center justify-center text-slate-500 p-4"
           role="status"
           aria-live="polite"
@@ -132,7 +114,7 @@ export const ChatRoom: React.FC = () => {
             aria-label={t('chat.messages_history', 'Message history')}
           >
             {isLoadingMore && (
-              <div 
+              <div
                 className="text-center text-blue-400 text-xs py-2 animate-pulse font-bold"
                 role="status"
                 aria-live="polite"
@@ -158,7 +140,7 @@ export const ChatRoom: React.FC = () => {
             <div ref={messagesEndRef} />
           </main>
 
-          <footer className="p-3 sm:p-4 bg-slate-800 border-t border-slate-700 relative shrink-0">
+          <footer className="p-3 sm:p-4 bg-slate-800/50 border-t border-slate-700/50 backdrop-blur-md relative shrink-0">
             <TypingIndicator users={typingUsers} />
             <div id="tour-input" className="flex gap-2 sm:gap-3 max-w-4xl mx-auto items-end pb-safe">
               <Input
@@ -170,13 +152,13 @@ export const ChatRoom: React.FC = () => {
                 }}
                 onEnterPress={onSend}
                 placeholder={t('chat.placeholder')}
-                className="flex-1 min-h-[44px] focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                className="flex-1 min-h-[44px] text-sm sm:text-base bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all rounded-xl px-4 py-2"
                 aria-label={t('chat.message_input_label', 'Type a message')}
               />
-              <Button 
-                onClick={onSend} 
-                disabled={!inputText.trim()} 
-                className="px-4 sm:px-6 py-2 sm:py-3 min-h-[44px] sm:h-[48px] focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              <Button
+                onClick={onSend}
+                disabled={!inputText.trim()}
+                className="px-5 sm:px-8 py-2 sm:py-3 h-[44px] sm:h-[48px] rounded-xl font-bold bg-blue-600 hover:bg-blue-500 transition-colors shadow-lg disabled:opacity-50 disabled:bg-slate-700"
                 aria-label={t('chat.send_button', 'Send message')}
               >
                 {t('chat.send')}
