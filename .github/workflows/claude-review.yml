@@ -24,3 +24,5 @@ jobs:
           show_full_output: true
           prompt: "/review"
           claude_args: "--max-turns 30"
+выconcurrency:
+  
