@@ -9,20 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write 
-    
+      pull-requests: write
+      id-token: write
+      
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 
-
+          fetch-depth: 0
+          
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@main
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:         
+        with:
           prompt: |
             You are an expert software engineer. Please review this pull request.
             1. Focus on identifying bugs, security vulnerabilities, and anti-patterns.
