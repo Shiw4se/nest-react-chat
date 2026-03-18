@@ -17,17 +17,14 @@ jobs:
           fetch-depth: 0
           
       - name: Run Claude Code Review
-        uses: anthropics/claude-code-action@main
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           use_sticky_comment: true
-          show_full_output: true
           prompt: |
             You are an expert software engineer. Please review this pull request.
             1. Focus on identifying bugs, security vulnerabilities, and anti-patterns.
             2. Check if the code follows the architecture rules.
             3. Do not nitpick small formatting issues.
-            4. Analyze the changed files using git diff and Read tools.
-            5. Write a clear, structured review with findings organized by severity.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            4. Analyze the changed files and write a clear, structured review with findings organized by severity.
+          claude_args: "--max-turns 10"
