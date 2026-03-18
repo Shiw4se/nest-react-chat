@@ -1,4 +1,4 @@
-name: "CI - Run Tests"
+name: "CI/CD - Build, Test & Deploy"
 
 on:
   push:
@@ -41,3 +41,34 @@ jobs:
       
       - name: Run Frontend tests
         run: cd frontend && npm test
+
+  deploy:
+    name: "Deploy to AWS EC2"
+    needs: test 
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' 
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |  
+          
+            cd ~/nest-react-chat            
+           
+            git pull origin main
+            
+           
+            cd backend
+            npm install
+            npx prisma generate
+            npm run build
+           
+            pm2 restart chat-backend            
+          
+            cd ../frontend
+            npm install
+            npm run build
