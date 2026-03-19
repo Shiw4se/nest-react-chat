@@ -10,7 +10,8 @@ export class MessagesService {
   constructor(private readonly messagesRepository: MessagesRepository) {}
 
   async createMessage(userId: string, roomId: string, text: string) {
-    return this.messagesRepository.create(userId, roomId, text);
+    const sanitized = text.replace(/<[^>]*>/g, '');
+    return this.messagesRepository.create(userId, roomId, sanitized);
   }
 
   async getMessagesForRoom(

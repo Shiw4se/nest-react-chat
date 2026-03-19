@@ -7,6 +7,9 @@ const PUBLIC_ROOMS_TTL_MS = 30_000;
 type PublicRooms = Awaited<ReturnType<RoomsRepository['findPublicRooms']>>;
 
 
+// NOTE: This cache is in-process memory. In a multi-instance deployment
+// each process maintains its own independent cache. For horizontal scaling,
+// replace with a distributed cache (e.g. Redis).
 @Injectable()
 export class CachedRoomsRepository {
   private cachedRooms: PublicRooms | null = null;
