@@ -4,8 +4,7 @@ import { RoomsController } from './rooms.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { RoomsRepository } from './rooms.repository';
 import { CachedRoomsRepository } from './cached-rooms.repository';
-
-export const ROOMS_REPOSITORY = 'ROOMS_REPOSITORY';
+import { ROOMS_REPOSITORY } from './rooms.tokens';
 
 @Module({
   imports: [PrismaModule],
@@ -13,7 +12,7 @@ export const ROOMS_REPOSITORY = 'ROOMS_REPOSITORY';
   providers: [
     RoomsRepository,
     CachedRoomsRepository,
-    { provide: ROOMS_REPOSITORY, useClass: CachedRoomsRepository },
+    { provide: ROOMS_REPOSITORY, useExisting: CachedRoomsRepository },
     RoomsService,
   ],
   exports: [RoomsService],

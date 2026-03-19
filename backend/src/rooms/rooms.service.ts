@@ -8,7 +8,7 @@ import {
 import { RoomType } from '@prisma/client';
 import * as crypto from 'crypto';
 import { RoomsRepository } from './rooms.repository';
-import { ROOMS_REPOSITORY } from './rooms.module';
+import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 
