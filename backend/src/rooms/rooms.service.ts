@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { RoomType } from '@prisma/client';
 import * as crypto from 'crypto';
-import { RoomsRepository } from './rooms.repository';
+import type { IRoomsRepository } from './rooms.repository.interface';
 import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -15,7 +15,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 @Injectable()
 export class RoomsService {
   constructor(
-    @Inject(ROOMS_REPOSITORY) private readonly roomsRepository: RoomsRepository,
+    @Inject(ROOMS_REPOSITORY) private readonly roomsRepository: IRoomsRepository,
     private readonly prisma: PrismaService,
   ) {}
 
