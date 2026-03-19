@@ -137,6 +137,8 @@ describe('ChatGateway', () => {
     it('should save message via service and emit to the room', async () => {
       const data = { roomId: 'room-123', message: 'Hello logic!' };
 
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
+
       const mockSavedMessage = {
         id: 'msg-1',
         message: data.message,
