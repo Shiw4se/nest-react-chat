@@ -5,6 +5,7 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
@@ -19,13 +20,12 @@ import { DeleteMessageDto } from './dto/delete-message.dto';
 import { RoomsService } from '../rooms/rooms.service';
 import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
-@WebSocketGateway({
-  cors: {
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  },
-})
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+// CORS origin is set dynamically in afterInit() via ConfigService
+// so that process.env is read after dotenv has been loaded by ConfigModule
+@WebSocketGateway()
+export class ChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
+{
   @WebSocketServer()
   server: Server;
 
@@ -35,6 +35,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messagesService: MessagesService,
     private readonly roomsService: RoomsService,
   ) {}
+
+  afterInit(server: Server) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    server.engine.opts.cors = { origin: frontendUrl, credentials: true };
+  }
 
   async handleConnection(client: Socket) {
     try {
