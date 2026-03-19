@@ -17,7 +17,7 @@ import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: process.env.FRONTEND_URL,
     credentials: true,
   },
 })
