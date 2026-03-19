@@ -71,6 +71,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   const handlePasteToken = async () => {
+    if (!navigator.clipboard) return;
     try {
       const text = await navigator.clipboard.readText();
       setInviteToken(text.trim());
@@ -101,7 +102,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </button>
 
         <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">
-          {t('modal.create_title')}
+          {mode === ModalMode.CREATE ? t('modal.create_title') : t('modal.join_title')}
         </h2>
 
         <div className="flex gap-2 mb-6 bg-slate-900/50 p-1 rounded-lg">
