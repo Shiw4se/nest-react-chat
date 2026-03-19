@@ -41,7 +41,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isMe, onD
               {message.user.username}
             </span>
           )}
-          <p className="text-sm">{message.message}</p>
+          <p className="text-sm" dangerouslySetInnerHTML={{ __html: message.message }} />
         </div>
       </div>
       <span className="text-[10px] text-slate-500 mt-1">
