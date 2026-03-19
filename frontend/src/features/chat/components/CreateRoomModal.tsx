@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '../../../components/ui/Button';
@@ -8,6 +8,8 @@ import { RoomsApi } from '../../../api/services/roomsApi';
 import { ModalMode, type ModalModeType } from '../../../constants/modalMode';
 import { RoomVisibility, type RoomVisibilityType } from '../../../constants/roomVisibility';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
+
+const ROOM_NAME_MAX = 50;
 
 interface Props {
   isOpen: boolean;
@@ -23,10 +25,26 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [roomType, setRoomType] = useState<RoomVisibilityType>(RoomVisibility.PUBLIC);
   const [inviteToken, setInviteToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const modalRef = useFocusTrap(isOpen, onClose);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (isOpen) {
+      setMode(ModalMode.CREATE);
+      setRoomName('');
+      setInviteToken('');
+      setRoomType(RoomVisibility.PUBLIC);
+    }
+  }, [isOpen]);
+
+  const switchMode = (next: ModalModeType) => {
+    setMode(next);
+    setRoomName('');
+    setInviteToken('');
+    setRoomType(RoomVisibility.PUBLIC);
+  };
+
+  const handleCreate = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!roomName.trim()) return;
     setIsLoading(true);
@@ -34,16 +52,15 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       await createAndJoinRoom(roomName, roomType);
       onClose();
       setRoomName('');
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || t('modal.create_error', 'Failed to create room'),
-      );
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || t('rooms.create_error'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleJoin = async (e: React.FormEvent) => {
+  const handleJoin = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!inviteToken.trim()) return;
     setIsLoading(true);
@@ -54,23 +71,34 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       toast.success(t('modal.join_success'));
       onClose();
       setInviteToken('');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t('modal.join_error'));
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || t('modal.join_error'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasteToken = async () => {
+    if (!navigator.clipboard) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      setInviteToken(text.trim());
+    } catch {
+      toast.error(t('common.clipboard_denied', 'Clipboard access denied'));
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div 
+      <div
         ref={modalRef}
         className="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-5 sm:p-6 relative max-h-[90vh] overflow-y-auto"
       >
@@ -89,14 +117,14 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <div className="flex gap-2 mb-6 bg-slate-900/50 p-1 rounded-lg">
           <Button
             variant={mode === ModalMode.CREATE ? 'primary' : 'text'}
-            onClick={() => setMode(ModalMode.CREATE)}
+            onClick={() => switchMode(ModalMode.CREATE)}
             className="flex-1 text-sm py-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
           >
             {t('modal.create_tab')}
           </Button>
           <Button
             variant={mode === ModalMode.JOIN ? 'primary' : 'text'}
-            onClick={() => setMode(ModalMode.JOIN)}
+            onClick={() => switchMode(ModalMode.JOIN)}
             className="flex-1 text-sm py-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
           >
             {t('modal.join_tab')}
@@ -105,41 +133,55 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {mode === ModalMode.CREATE && (
           <form onSubmit={handleCreate} className="space-y-4">
-            <Input
-              placeholder={t('modal.room_name_placeholder')}
-              value={roomName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRoomName(e.target.value)}
-              required
-              aria-required="true"
-              maxLength={50}
-              className="focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-            />
-            <div className="flex gap-4 items-center p-3 bg-slate-900/50 rounded-lg border border-slate-700">
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer py-1">
-                <input
-                  type="radio"
-                  checked={roomType === RoomVisibility.PUBLIC}
-                  onChange={() => setRoomType(RoomVisibility.PUBLIC)}
-                  className="accent-blue-500 w-4 h-4 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-                />
-                {t('modal.public_type')}
-              </label>
-              <label className="flex items-center gap-2 text-slate-300 cursor-pointer py-1">
-                <input
-                  type="radio"
-                  checked={roomType === RoomVisibility.PRIVATE}
-                  onChange={() => setRoomType(RoomVisibility.PRIVATE)}
-                  className="accent-blue-500 w-4 h-4 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-                />
-                {t('modal.private_type')}
-              </label>
+            <div>
+              <Input
+                placeholder={t('modal.room_name_placeholder')}
+                value={roomName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRoomName(e.target.value)}
+                required
+                aria-required="true"
+                maxLength={ROOM_NAME_MAX}
+                className="focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+              />
+              <p className={`text-xs mt-1 text-right pr-1 ${roomName.length >= ROOM_NAME_MAX ? 'text-red-400' : 'text-slate-500'}`}>
+                {roomName.length}/{ROOM_NAME_MAX}
+              </p>
             </div>
-            <p className="text-xs text-slate-400 px-1">
-              {roomType === RoomVisibility.PUBLIC
-                ? t('modal.public_hint')
-                : t('modal.private_hint')}
-            </p>
-            <Button type="submit" className="w-full mt-2 min-h-[44px] focus:ring-2 focus:ring-blue-500" disabled={isLoading || !roomName.trim()}>
+
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('modal.room_type_label', 'Room type')}>
+              {([RoomVisibility.PUBLIC, RoomVisibility.PRIVATE] as RoomVisibilityType[]).map((type) => {
+                const isSelected = roomType === type;
+                const isPublic = type === RoomVisibility.PUBLIC;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setRoomType(type)}
+                    className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-slate-600 bg-slate-900/50 hover:border-slate-500'
+                    }`}
+                  >
+                    <span className="text-lg" aria-hidden="true">{isPublic ? '🌐' : '🔒'}</span>
+                    <span className={`text-sm font-medium ${isSelected ? 'text-blue-400' : 'text-slate-300'}`}>
+                      {t(isPublic ? 'modal.public_type' : 'modal.private_type')}
+                    </span>
+                    <span className="text-xs text-slate-500 text-left leading-tight">
+                      {t(isPublic ? 'modal.public_hint' : 'modal.private_hint')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full mt-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading || !roomName.trim()}
+            >
               {isLoading ? t('modal.creating') : t('modal.create_btn')}
             </Button>
           </form>
@@ -147,14 +189,23 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
         {mode === ModalMode.JOIN && (
           <form onSubmit={handleJoin} className="space-y-4">
-            <Input
-              placeholder={t('modal.token_placeholder')}
-              value={inviteToken}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteToken(e.target.value)}
-              required
-              aria-required="true"
-              className="focus:ring-2 focus:ring-blue-500 min-h-[44px]"
-            />
+            <div className="relative">
+              <Input
+                placeholder={t('modal.token_placeholder')}
+                value={inviteToken}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInviteToken(e.target.value)}
+                required
+                aria-required="true"
+                className="focus:ring-2 focus:ring-blue-500 min-h-[44px] pr-20"
+              />
+              <button
+                type="button"
+                onClick={handlePasteToken}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 hover:text-blue-300 px-2 py-1 rounded hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {t('common.paste', 'Paste')}
+              </button>
+            </div>
             <Button
               type="submit"
               className="w-full mt-2 min-h-[44px] focus:ring-2 focus:ring-blue-500"

@@ -96,5 +96,10 @@
     "fetch_error": "ルームの読み込みに失敗しました",
     "create_success": "ルーム「{{name}}」が作成されました！",
     "create_error": "ルームの作成に失敗しました"
+  },
+  "common": {
+    "close": "閉じる",
+    "paste": "貼り付け",
+    "clipboard_denied": "クリップボードへのアクセスが拒否されました"
   }
 }

@@ -96,5 +96,10 @@
     "fetch_error": "Nie udało się załadować pokojów",
     "create_success": "Pokój {{name}} został pomyślnie utworzony!",
     "create_error": "Nie udało się utworzyć pokoju"
+  },
+  "common": {
+    "close": "Zamknij",
+    "paste": "Wklej",
+    "clipboard_denied": "Odmowa dostępu do schowka"
   }
 }

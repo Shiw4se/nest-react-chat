@@ -96,5 +96,10 @@
     "fetch_error": "Failed to load your rooms",
     "create_success": "Room {{name}} created!",
     "create_error": "Failed to create room"
+  },
+  "common": {
+    "close": "Close",
+    "paste": "Paste",
+    "clipboard_denied": "Clipboard access denied"
   }
 }
