@@ -98,7 +98,8 @@
     "create_error": "Nie udało się utworzyć pokoju"
   },
   "common": {
-    "close": "Close",
-    "paste": "Wklej"
+    "close": "Zamknij",
+    "paste": "Wklej",
+    "clipboard_denied": "Odmowa dostępu do schowka"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '../../../components/ui/Button';
@@ -28,6 +28,15 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const modalRef = useFocusTrap(isOpen, onClose);
 
+  useEffect(() => {
+    if (isOpen) {
+      setMode(ModalMode.CREATE);
+      setRoomName('');
+      setInviteToken('');
+      setRoomType(RoomVisibility.PUBLIC);
+    }
+  }, [isOpen]);
+
   const switchMode = (next: ModalModeType) => {
     setMode(next);
     setRoomName('');
@@ -35,7 +44,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
     setRoomType(RoomVisibility.PUBLIC);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!roomName.trim()) return;
     setIsLoading(true);
@@ -45,13 +54,13 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setRoomName('');
     } catch (error: unknown) {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || t('modal.create_error', 'Failed to create room'));
+      toast.error(msg || t('rooms.create_error'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleJoin = async (e: React.FormEvent) => {
+  const handleJoin = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!inviteToken.trim()) return;
     setIsLoading(true);
@@ -76,7 +85,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       const text = await navigator.clipboard.readText();
       setInviteToken(text.trim());
     } catch {
-      // clipboard access denied — do nothing
+      toast.error(t('common.clipboard_denied', 'Clipboard access denied'));
     }
   };
 

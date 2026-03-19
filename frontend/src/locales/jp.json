@@ -98,7 +98,8 @@
     "create_error": "ルームの作成に失敗しました"
   },
   "common": {
-    "close": "Close",
-    "paste": "貼り付け"
+    "close": "閉じる",
+    "paste": "貼り付け",
+    "clipboard_denied": "クリップボードへのアクセスが拒否されました"
   }
 }

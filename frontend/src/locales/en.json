@@ -99,6 +99,7 @@
   },
   "common": {
     "close": "Close",
-    "paste": "Paste"
+    "paste": "Paste",
+    "clipboard_denied": "Clipboard access denied"
   }
 }
