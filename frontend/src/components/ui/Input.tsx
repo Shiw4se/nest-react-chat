@@ -49,7 +49,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
   `.replace(/\s+/g, ' ').trim();
 
   if (props.multiline) {
-    const { multiline, onEnterPress, ...textareaProps } = props;
+    const { multiline, onEnterPress, className: _className, ...textareaProps } = props;
     return (
       <textarea
         ref={textareaRef}
@@ -61,7 +61,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
     );
   }
 
-  const { multiline, onEnterPress: _, ...inputProps } = props;
+  const { multiline, onEnterPress: _, className: _className, ...inputProps } = props;
   return (
     <input
       className={`h-[48px] ${baseClasses}`}
