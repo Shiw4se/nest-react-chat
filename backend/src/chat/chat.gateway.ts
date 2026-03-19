@@ -5,31 +5,41 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { ChatEvents } from './enums/chat-events.enum';
 import { MessagesService } from '../messages/messages.service';
 import { SendMessageDto } from '../messages/dto/send-message.dto';
+import { JoinRoomDto } from './dto/join-room.dto';
+import { TypingDto } from './dto/typing.dto';
+import { DeleteMessageDto } from './dto/delete-message.dto';
 import { RoomsService } from '../rooms/rooms.service';
 import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
-@WebSocketGateway({
-  cors: {
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  },
-})
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+// CORS origin is set dynamically in afterInit() via ConfigService
+// so that process.env is read after dotenv has been loaded by ConfigModule
+@WebSocketGateway()
+export class ChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
+{
   @WebSocketServer()
   server: Server;
 
   constructor(
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     private readonly messagesService: MessagesService,
     private readonly roomsService: RoomsService,
   ) {}
+
+  afterInit(server: Server) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    server.engine.opts.cors = { origin: frontendUrl, credentials: true };
+  }
 
   async handleConnection(client: Socket) {
     try {
@@ -42,7 +52,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = await this.jwtService.verifyAsync<
         AuthenticatedSocket['user']
       >(token, {
-        secret: process.env.JWT_SECRET,
+        secret: this.configService.get<string>('JWT_SECRET'),
       });
 
       (client as AuthenticatedSocket).user = payload;
@@ -61,7 +71,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.JOIN)
   async handleJoinRoom(
-    @MessageBody() data: { roomId: string },
+    @MessageBody() data: JoinRoomDto,
     @ConnectedSocket() client: AuthenticatedSocket,
   ): Promise<void> {
     const { id: userId, username } = client.user;
@@ -124,7 +134,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.TYPING)
   handleTyping(
-    @MessageBody() data: { roomId: string; isTyping: boolean },
+    @MessageBody() data: TypingDto,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     const { username } = client.user;
@@ -137,7 +147,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage(ChatEvents.DELETE_MESSAGE)
   async handleDeleteMessage(
-    @MessageBody() data: { roomId: string; messageId: string },
+    @MessageBody() data: DeleteMessageDto,
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     if (!client.rooms.has(data.roomId)) {

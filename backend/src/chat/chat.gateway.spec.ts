@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method, @typescript-eslint/no-unused-vars, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { ChatGateway } from './chat.gateway';
 import { MessagesService } from '../messages/messages.service';
 import { RoomsService } from '../rooms/rooms.service';
@@ -46,6 +47,7 @@ describe('ChatGateway', () => {
         ChatGateway,
         { provide: MessagesService, useValue: mockMessagesService },
         { provide: RoomsService, useValue: mockRoomsService },
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
         {
           provide: JwtService,
           useValue: {
