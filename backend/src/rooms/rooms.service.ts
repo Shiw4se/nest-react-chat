@@ -3,17 +3,19 @@ import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
 import { RoomType } from '@prisma/client';
 import * as crypto from 'crypto';
-import { CachedRoomsRepository } from './cached-rooms.repository';
+import type { IRoomsRepository } from './rooms.repository.interface';
+import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 
 @Injectable()
 export class RoomsService {
   constructor(
-    private readonly roomsRepository: CachedRoomsRepository, 
+    @Inject(ROOMS_REPOSITORY) private readonly roomsRepository: IRoomsRepository,
     private readonly prisma: PrismaService,
   ) {}
 

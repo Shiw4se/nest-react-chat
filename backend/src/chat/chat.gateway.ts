@@ -101,6 +101,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const { id: userId } = client.user;
 
+    if (!client.rooms.has(data.roomId)) {
+      client.emit('ERROR', { message: 'Forbidden: join the room first' });
+      return;
+    }
+
     try {
       const savedMessage = await this.messagesService.createMessage(
         userId,
@@ -135,6 +140,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { roomId: string; messageId: string },
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
+    if (!client.rooms.has(data.roomId)) {
+      client.emit('ERROR', { message: 'Forbidden: join the room first' });
+      return;
+    }
+
     try {
       const { id: userId } = client.user;
 
