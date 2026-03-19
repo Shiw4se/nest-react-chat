@@ -96,5 +96,9 @@
     "fetch_error": "Nie udało się załadować pokojów",
     "create_success": "Pokój {{name}} został pomyślnie utworzony!",
     "create_error": "Nie udało się utworzyć pokoju"
+  },
+  "common": {
+    "close": "Close",
+    "paste": "Wklej"
   }
 }

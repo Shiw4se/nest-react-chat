@@ -43,10 +43,9 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       await createAndJoinRoom(roomName, roomType);
       onClose();
       setRoomName('');
-    } catch (error: any) {
-      toast.error(
-        error.response?.data?.message || t('modal.create_error', 'Failed to create room'),
-      );
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || t('modal.create_error', 'Failed to create room'));
     } finally {
       setIsLoading(false);
     }
@@ -63,8 +62,9 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
       toast.success(t('modal.join_success'));
       onClose();
       setInviteToken('');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t('modal.join_error'));
+    } catch (error: unknown) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || t('modal.join_error'));
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +139,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('modal.room_type_label', 'Room type')}>
               {([RoomVisibility.PUBLIC, RoomVisibility.PRIVATE] as RoomVisibilityType[]).map((type) => {
                 const isSelected = roomType === type;
                 const isPublic = type === RoomVisibility.PUBLIC;
@@ -147,6 +147,8 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   <button
                     key={type}
                     type="button"
+                    role="radio"
+                    aria-checked={isSelected}
                     onClick={() => setRoomType(type)}
                     className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                       isSelected
@@ -154,7 +156,7 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         : 'border-slate-600 bg-slate-900/50 hover:border-slate-500'
                     }`}
                   >
-                    <span className="text-lg">{isPublic ? '🌐' : '🔒'}</span>
+                    <span className="text-lg" aria-hidden="true">{isPublic ? '🌐' : '🔒'}</span>
                     <span className={`text-sm font-medium ${isSelected ? 'text-blue-400' : 'text-slate-300'}`}>
                       {t(isPublic ? 'modal.public_type' : 'modal.private_type')}
                     </span>
