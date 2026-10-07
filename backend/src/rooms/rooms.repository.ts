@@ -44,7 +44,7 @@ export class RoomsRepository {
           _count: { select: { members: true } },
           messages: {
             take: 1,
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ createdAt: 'desc' }, { seq: 'desc' }],
             select: MESSAGE_PREVIEW_SELECT,
           },
         },
@@ -92,7 +92,7 @@ export class RoomsRepository {
   async findLastMessage(roomId: string) {
     return this.prisma.message.findFirst({
       where: { roomId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { seq: 'desc' }],
       select: MESSAGE_PREVIEW_SELECT,
     });
   }

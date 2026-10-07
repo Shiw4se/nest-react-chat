@@ -26,7 +26,7 @@ export class MessagesRepository {
       skip: cursor ? 1 : 0,
       ...(cursor && { cursor: { id: cursor } }),
       where: { roomId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { seq: 'desc' }],
       include: {
         user: {
           select: { username: true, displayName: true, avatarUrl: true },

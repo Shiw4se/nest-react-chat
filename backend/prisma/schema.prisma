@@ -59,6 +59,8 @@ model RoomMember {
 
 model Message {
   id        String   @id @default(uuid())
+  /// Insertion order; breaks ties between messages created in the same millisecond
+  seq       Int      @default(autoincrement())
   message   String
   createdAt DateTime @default(now())
 
