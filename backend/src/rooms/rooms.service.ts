@@ -11,12 +11,20 @@ import type { IRoomsRepository } from './rooms.repository.interface';
 import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { PresenceService } from '../realtime/presence.service';
+import { RealtimeService } from '../realtime/realtime.service';
+import { ChatEvents } from '../chat/enums/chat-events.enum';
+import { ImageStorageService } from '../storage/image-storage.service';
 
 @Injectable()
 export class RoomsService {
   constructor(
-    @Inject(ROOMS_REPOSITORY) private readonly roomsRepository: IRoomsRepository,
+    @Inject(ROOMS_REPOSITORY)
+    private readonly roomsRepository: IRoomsRepository,
     private readonly prisma: PrismaService,
+    private readonly presence: PresenceService,
+    private readonly realtime: RealtimeService,
+    private readonly images: ImageStorageService,
   ) {}
 
   async create(userId: string, createRoomDto: CreateRoomDto) {
@@ -37,7 +45,7 @@ export class RoomsService {
   }
 
   async getPublicRooms() {
-    return this.roomsRepository.findPublicRooms(); // идёт через кэш
+    return this.roomsRepository.findPublicRooms(); // served through the cache
   }
 
   async joinByToken(userId: string, inviteToken: string) {
@@ -63,7 +71,9 @@ export class RoomsService {
     const room = await this.roomsRepository.findById(roomId);
     if (!room) throw new NotFoundException('Room not found');
     if (room.ownerId !== userId)
-      throw new ForbiddenException('Only the owner can regenerate the invite token');
+      throw new ForbiddenException(
+        'Only the owner can regenerate the invite token',
+      );
     if (room.type !== RoomType.PRIVATE)
       throw new ForbiddenException('Only private rooms have invite tokens');
     const newInviteToken = crypto.randomBytes(16).toString('base64url');
@@ -76,15 +86,130 @@ export class RoomsService {
     if (!room) throw new NotFoundException('Room not found');
     if (room.ownerId !== ownerId)
       throw new ForbiddenException('Only the owner can invite users');
-    const targetUser = await this.prisma.user.findUnique({ where: { username } });
-    if (!targetUser) throw new NotFoundException(`User "${username}" not found`);
-    const existing = await this.roomsRepository.findMember(targetUser.id, roomId);
-    if (existing) throw new ConflictException(`User "${username}" is already a member`);
+    const targetUser = await this.prisma.user.findUnique({
+      where: { username },
+    });
+    if (!targetUser)
+      throw new NotFoundException(`User "${username}" not found`);
+    const existing = await this.roomsRepository.findMember(
+      targetUser.id,
+      roomId,
+    );
+    if (existing)
+      throw new ConflictException(`User "${username}" is already a member`);
     await this.roomsRepository.addMember(targetUser.id, roomId);
+    // The invited user sees the room appear without reloading
+    this.realtime.toUser(targetUser.id, ChatEvents.ROOM_ADDED, {
+      roomId,
+      roomName: room.name,
+    });
     return { message: `User "${username}" successfully invited` };
   }
 
+  async getRoom(userId: string, roomId: string) {
+    const room = await this.roomsRepository.findById(roomId);
+    if (!room) throw new NotFoundException('Room not found');
+    if (!(await this.checkRoomAccess(userId, roomId)))
+      throw new ForbiddenException('You do not have access to this room');
+    const members = await this.roomsRepository.findMembers(roomId);
+    // inviteToken is only exposed to the owner through the dedicated endpoint
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { inviteToken, ...safeRoom } = room;
+    return {
+      ...safeRoom,
+      members: members.map((m) => ({
+        id: m.user.id,
+        username: m.user.username,
+        displayName: m.user.displayName,
+        avatarUrl: m.user.avatarUrl,
+        lastSeenAt: m.user.lastSeenAt,
+        isOnline: this.presence.isOnline(m.user.id),
+        joinedAt: m.joinedAt,
+        isOwner: m.user.id === room.ownerId,
+      })),
+    };
+  }
+
+  async leaveRoom(userId: string, roomId: string) {
+    const room = await this.roomsRepository.findById(roomId);
+    if (!room) throw new NotFoundException('Room not found');
+    if (room.ownerId === userId)
+      throw new ForbiddenException(
+        'The owner cannot leave the room. Delete it instead.',
+      );
+    const membership = await this.roomsRepository.findMember(userId, roomId);
+    if (!membership) throw new NotFoundException('You are not a member');
+    await this.roomsRepository.removeMember(userId, roomId);
+    return { message: 'Left the room' };
+  }
+
+  async deleteRoom(userId: string, roomId: string) {
+    const room = await this.roomsRepository.findById(roomId);
+    if (!room) throw new NotFoundException('Room not found');
+    if (room.ownerId !== userId)
+      throw new ForbiddenException('Only the owner can delete the room');
+    // Collect members and files first: the cascade removes those rows
+    const [memberIds, attachmentUrls] = await Promise.all([
+      this.roomsRepository.findMemberIds(roomId),
+      this.roomsRepository.findAttachmentUrls(roomId),
+    ]);
+    await this.roomsRepository.delete(roomId);
+    // Best effort: a missing file must not fail the deletion
+    await Promise.allSettled(
+      attachmentUrls.map((url) => this.images.remove(url)),
+    );
+    this.realtime.toUsers(memberIds, ChatEvents.ROOM_REMOVED, {
+      roomId,
+      roomName: room.name,
+      deletedBy: userId,
+    });
+    return { message: 'Room deleted' };
+  }
+
+  async isMember(userId: string, roomId: string): Promise<boolean> {
+    return !!(await this.roomsRepository.findMember(userId, roomId));
+  }
+
+  /**
+   * Tells every member (in any room or tab) what changed, for unread badges
+   * and previews. senderId null = refresh only (edit/delete), no unread bump.
+   */
+  async notifyActivity(
+    roomId: string,
+    senderId: string | null,
+    lastMessage: unknown,
+  ) {
+    const memberIds = await this.roomsRepository.findMemberIds(roomId);
+    this.realtime.toUsers(memberIds, ChatEvents.ROOM_ACTIVITY, {
+      roomId,
+      senderId,
+      lastMessage,
+    });
+  }
+
+  getMemberIds(roomId: string) {
+    return this.roomsRepository.findMemberIds(roomId);
+  }
+
+  markRead(userId: string, roomId: string) {
+    return this.roomsRepository.markRead(userId, roomId);
+  }
+
+  getLastMessage(roomId: string) {
+    return this.roomsRepository.findLastMessage(roomId);
+  }
+
+  /** Read-only access check: public rooms are open to everyone, private ones to members. */
   async checkRoomAccess(userId: string, roomId: string): Promise<boolean> {
+    const room = await this.roomsRepository.findById(roomId);
+    if (!room) return false;
+    if (room.type === RoomType.PUBLIC) return true;
+    const membership = await this.roomsRepository.findMember(userId, roomId);
+    return !!membership;
+  }
+
+  /** Like checkRoomAccess, but also records membership when a user enters a public room. */
+  async joinRoom(userId: string, roomId: string): Promise<boolean> {
     const room = await this.roomsRepository.findById(roomId);
     if (!room) return false;
     if (room.type === RoomType.PUBLIC) {

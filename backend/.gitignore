@@ -56,3 +56,10 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# local PostgreSQL data (npm run db:start)
+.pgdata/
+.pgpass.tmp
+
+# user-uploaded files (avatars)
+uploads/

@@ -1,11 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { ThemePreference } from '../utils/theme';
 
 interface UIState {
   hasSeenTour: Record<string, boolean>;
   setHasSeenTour: (userId: string) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+
+  theme: ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
+
+  /** User whose profile panel is open, or null when closed. Not persisted. */
+  profileUserId: string | null;
+  openProfile: (userId: string) => void;
+  closeProfile: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -16,12 +25,24 @@ export const useUIStore = create<UIState>()(
         set((state) => ({
           hasSeenTour: { ...state.hasSeenTour, [userId]: true },
         })),
-      
+
       isSidebarOpen: true,
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+
+      theme: 'system',
+      setTheme: (theme) => set({ theme }),
+
+      profileUserId: null,
+      openProfile: (userId) => set({ profileUserId: userId }),
+      closeProfile: () => set({ profileUserId: null }),
     }),
     {
       name: 'ui-storage',
+      partialize: (state) => ({
+        hasSeenTour: state.hasSeenTour,
+        isSidebarOpen: state.isSidebarOpen,
+        theme: state.theme,
+      }),
     },
   ),
 );

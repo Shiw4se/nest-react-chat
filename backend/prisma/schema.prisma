@@ -13,10 +13,15 @@ enum RoomType {
 
 model User {
   id         String       @id @default(uuid())
-  username   String       @unique
-  password   String
+  username    String       @unique
+  password    String
+  displayName String?
+  bio         String?
+  avatarUrl   String?
+  lastSeenAt  DateTime?
   
   messages   Message[]
+  reactions  Reaction[]
   rooms      RoomMember[] 
   ownedRooms Room[]       
   
@@ -45,19 +50,52 @@ model RoomMember {
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
   
-  joinedAt  DateTime @default(now())
+  joinedAt   DateTime @default(now())
+  /// Messages created after this are unread for the member
+  lastReadAt DateTime @default(now())
 
-  @@id([userId, roomId]) 
+  @@id([userId, roomId])
+  @@index([roomId])
 }
 
 model Message {
   id        String   @id @default(uuid())
+  /// Insertion order; breaks ties between messages created in the same millisecond
+  seq       Int      @default(autoincrement())
   message   String
   createdAt DateTime @default(now())
+  editedAt  DateTime?
+
+  /// Optional image; the text is then a caption and may be empty
+  attachmentUrl    String?
+  attachmentWidth  Int?
+  attachmentHeight Int?
+
+  replyToId String?
+  replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("Replies")
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  reactions Reaction[]
+
+  @@index([roomId, createdAt])
+}
+
+/// One emoji from one user on one message; toggling deletes the row
+model Reaction {
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@id([messageId, userId, emoji])
 }

@@ -105,12 +105,12 @@ export const CreateRoomModal: React.FC<Props> = ({ isOpen, onClose }) => {
         <button
           onClick={onClose}
           aria-label={t('common.close', 'Close')}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-50 text-2xl font-bold leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           &times;
         </button>
 
-        <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">
+        <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-50 mb-6 text-center">
           {mode === ModalMode.CREATE ? t('modal.create_title') : t('modal.join_title')}
         </h2>
 

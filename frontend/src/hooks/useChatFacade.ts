@@ -16,7 +16,13 @@ export const useChatFacade = () => {
   const { messages, typingUsers, clearMessages } = useChatStore();
   const { activeRoomId, myRooms, publicRooms, setActiveRoom } = useRoomStore();
 
-  const { sendMessage: socketSend, handleTyping, deleteMessage } = useChatSocket(user, activeRoomId);
+  const {
+    sendMessage: socketSend,
+    handleTyping,
+    deleteMessage,
+    editMessage: socketEdit,
+    toggleReaction,
+  } = useChatSocket(user, activeRoomId);
   const { loadMore, isLoadingMore } = useChatHistory(activeRoomId);
 
   const validator = useMemo(() => new MessageValidationChain(), []);
@@ -35,21 +41,48 @@ export const useChatFacade = () => {
   );
 
   const sendMessage = useCallback(
-    (text: string): { success: boolean; error?: string } => {
+    (text: string, replyToId?: string): { success: boolean; error?: string } => {
       if (!activeRoomId) return { success: false, error: 'No room selected' };
       try {
         validator.validate(text);
         const chunks = text.match(/[\s\S]{1,2000}/gu) ?? [];
-        chunks.forEach((chunk) => {
-          const payload = new MessageBuilder().setRoom(activeRoomId).setMessage(chunk).build();
+        chunks.forEach((chunk, index) => {
+          const payload = new MessageBuilder()
+            .setRoom(activeRoomId)
+            .setMessage(chunk)
+            // Only the first part of a long message quotes the original
+            .setReplyTo(index === 0 ? replyToId : undefined)
+            .build();
           socketSend(payload);
         });
         return { success: true };
-      } catch (error: any) {
-        return { success: false, error: error.message as string };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid message';
+        return { success: false, error: message };
       }
     },
     [activeRoomId, socketSend, validator],
+  );
+
+  const editMessage = useCallback(
+    (
+      messageId: string,
+      text: string,
+      previousText: string,
+      options: { allowEmpty?: boolean } = {},
+    ): { success: boolean; error?: string } => {
+      try {
+        // A photo may lose its caption; text messages go through the validators
+        if (!(options.allowEmpty && text === '')) validator.validate(text);
+        if (text.length > 2000) return { success: false, error: 'Message is too long' };
+        if (text !== previousText) socketEdit(messageId, text, previousText);
+        return { success: true };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid message';
+        return { success: false, error: message };
+      }
+    },
+    [socketEdit, validator],
   );
 
   const leaveChat = useCallback(() => {
@@ -68,9 +101,11 @@ export const useChatFacade = () => {
 
     switchRoom,
     sendMessage,
+    editMessage,
     leaveChat,
     handleTyping,
     deleteMessage,
+    toggleReaction,
     loadMore,
   };
 };

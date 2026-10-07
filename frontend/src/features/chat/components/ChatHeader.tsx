@@ -1,136 +1,212 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
+import { Icon } from '../../../components/ui/Icon';
 import { useChatStore } from '../../../store/useChatStore';
 import { useRoomStore } from '../../../store/useRoomStore';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { SUPPORTED_LANGUAGES } from '../../../constants/languages';
-import { InviteModal } from './InviteModal';
 import { useUIStore } from '../../../store/useUIStore';
+import { InviteModal } from './InviteModal';
+import { RoomInfoPanel } from './RoomInfoPanel';
+import type { Room } from '../../../types/room';
 
 interface Props {
-  room: string;
-  username: string;
-  onLeave: () => void;
+  room: Room | undefined;
 }
 
-export const ChatHeader: React.FC<Props> = ({ room, username, onLeave }) => {
-  const { t, i18n } = useTranslation();
-  const isConnected = useChatStore((state) => state.isConnected);
-  const isReconnecting = useChatStore((state) => state.isReconnecting);
+export const ChatHeader: React.FC<Props> = ({ room }) => {
+  const { t } = useTranslation();
+  const isConnected = useChatStore((s) => s.isConnected);
+  const isReconnecting = useChatStore((s) => s.isReconnecting);
+  const typingUsers = useChatStore((s) => s.typingUsers);
+  const currentUserId = useAuthStore((s) => s.user?.id);
+  const setActiveRoom = useRoomStore((s) => s.setActiveRoom);
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
 
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const { activeRoomId, myRooms, setActiveRoom } = useRoomStore();
-  const { toggleSidebar } = useUIStore();
-  
-  const currentUserId = useAuthStore((state) => state.user?.id);
+  const isOwner = !!room && room.ownerId === currentUserId;
+  const canInvite = isOwner && room?.type === 'PRIVATE';
 
-  const activeRoom = useMemo(
-    () => myRooms.find((r) => r.id === activeRoomId),
-    [myRooms, activeRoomId],
-  );
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isMenuOpen]);
 
-  const canInvite = activeRoom?.type === 'PRIVATE' && activeRoom?.ownerId === currentUserId;
+  const subtitle = useMemo(() => {
+    if (!room) return '';
+    if (!isConnected) {
+      return isReconnecting ? t('chat.reconnecting') : t('chat.disconnected');
+    }
+    if (typingUsers.length > 0) {
+      return typingUsers.length === 1
+        ? t('chat.typing_one', { name: typingUsers[0] })
+        : t('chat.typing_many', { names: typingUsers.join(', ') });
+    }
+    return t('room.members_count', { count: room._count?.members ?? 0 });
+  }, [room, isConnected, isReconnecting, typingUsers, t]);
 
-  const statusColor = useMemo(() => {
-    if (isConnected) return 'bg-green-500';
-    if (isReconnecting) return 'bg-yellow-500';
-    return 'bg-red-500';
-  }, [isConnected, isReconnecting]);
-
-  const statusText = useMemo(() => {
-    if (isConnected) return ` ${t('chat.connected_as')} ${username}`;
-    if (isReconnecting) return ` ${t('chat.reconnecting')}`;
-    return ` ${t('chat.disconnected')}`;
-  }, [isConnected, isReconnecting, t, username]);
+  const subtitleTone = !isConnected
+    ? isReconnecting
+      ? 'text-amber-400'
+      : 'text-red-400'
+    : typingUsers.length > 0
+      ? 'text-sky-400'
+      : 'text-slate-400';
 
   return (
     <>
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-slate-800 border-b border-slate-700 shadow-sm z-10 gap-3 sm:gap-0">
-        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-          
-          <Button
-            variant="text"
-            onClick={() => setActiveRoom(null)}
-            className="md:hidden px-2 py-1 text-slate-400 hover:text-white min-h-[44px] focus:ring-2 focus:ring-blue-500 shrink-0"
-            aria-label={t('common.back', 'Back to rooms')}
+      <header className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-16 bg-slate-800/95 backdrop-blur border-b border-slate-700/70 z-20 shrink-0">
+        <Button
+          variant="icon"
+          onClick={() => setActiveRoom(null)}
+          className="md:hidden"
+          aria-label={t('common.back', 'Back to rooms')}
+        >
+          <Icon name="back" />
+        </Button>
+
+        <Button
+          variant="icon"
+          onClick={toggleSidebar}
+          className="hidden md:inline-flex"
+          aria-label={t('common.toggle_sidebar', 'Toggle sidebar')}
+        >
+          <Icon name="menu" />
+        </Button>
+
+        {room ? (
+          <button
+            type="button"
+            onClick={() => setIsInfoOpen(true)}
+            className="flex items-center gap-3 min-w-0 flex-1 rounded-xl px-2 py-1.5 text-left hover:bg-slate-700/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+            aria-haspopup="dialog"
+            aria-label={t('room.open_info', 'Open room info')}
           >
-            <span className="text-xl">←</span>
-          </Button>
-
-          <Button
-            variant="text"
-            onClick={toggleSidebar}
-            className="hidden md:flex px-2 py-1 text-slate-400 hover:text-white min-h-[44px] focus:ring-2 focus:ring-blue-500 shrink-0"
-            aria-label={t('common.toggle_sidebar', 'Toggle sidebar')}
-            title="Toggle Sidebar"
-          >
-            <span className="text-xl">☰</span>
-          </Button>
-
-          <div className="relative flex h-3 w-3 shrink-0">
-            {isReconnecting && (
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-            )}
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${statusColor}`}></span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg sm:text-xl font-bold text-white leading-tight truncate">{t('chat.title')}</h2>
-            <p className="text-[10px] sm:text-xs text-slate-400 truncate">
-              {t('chat.room')}: <span className="text-blue-400">{room}</span> |{statusText}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto pb-1 sm:pb-0 shrink-0">
-          <div className="flex bg-slate-900 p-1 rounded-lg border border-slate-700 shrink-0">
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <Button
-                key={lang}
-                variant="text"
-                onClick={() => i18n.changeLanguage(lang)}
-                className={`uppercase px-2 py-1 rounded-md text-[10px] font-bold transition-all min-h-[32px] !no-underline focus:ring-2 focus:ring-blue-500 ${
-                  i18n.language === lang
-                    ? '!bg-blue-600 !text-white'
-                    : '!text-slate-500 hover:!text-slate-300'
+            <span className="relative">
+              <Avatar name={room.name} size="md" shape="rounded" />
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-slate-800 ${
+                  isConnected ? 'bg-emerald-500' : isReconnecting ? 'bg-amber-400' : 'bg-red-500'
                 }`}
-                aria-pressed={i18n.language === lang}
-                aria-label={`Change language to ${lang}`}
-              >
-                {lang}
-              </Button>
-            ))}
-          </div>
+                aria-hidden="true"
+              />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-semibold text-slate-50 leading-tight truncate">
+                {room.name}
+              </span>
+              <span className={`block text-xs leading-tight truncate ${subtitleTone}`}>
+                {subtitle}
+              </span>
+            </span>
+          </button>
+        ) : (
+          <div className="flex-1" />
+        )}
 
-          {canInvite && (
+        {room && (
+          <div className="relative" ref={menuRef}>
             <Button
-              onClick={() => setIsInviteOpen(true)}
-              variant="text"
-              className="text-xs px-3 py-1.5 border border-slate-600 hover:border-blue-500 min-h-[44px] shrink-0 focus:ring-2 focus:ring-blue-500"
-              aria-haspopup="dialog"
+              variant="icon"
+              onClick={() => setIsMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+              aria-label={t('room.menu', 'Room menu')}
             >
-              📋 {t('invite.btn', 'Invite')}
+              <Icon name="more" />
             </Button>
-          )}
 
-          <Button 
-            onClick={onLeave} 
-            variant="danger" 
-            className="text-xs px-3 py-1.5 min-h-[44px] shrink-0 focus:ring-2 focus:ring-red-500"
-          >
-            {t('chat.leave')}
-          </Button>
-        </div>
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-1 w-56 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl py-1.5 animate-pop z-30"
+              >
+                <MenuItem
+                  icon="info"
+                  label={t('room.info', 'Room info')}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsInfoOpen(true);
+                  }}
+                />
+                {canInvite && (
+                  <MenuItem
+                    icon="link"
+                    label={t('room.invite', 'Invite')}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsInviteOpen(true);
+                    }}
+                  />
+                )}
+                <div className="my-1 border-t border-slate-700/70" />
+                <MenuItem
+                  icon={isOwner ? 'trash' : 'logout'}
+                  label={isOwner ? t('room.delete') : t('room.leave')}
+                  danger
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsInfoOpen(true);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </header>
 
-      {activeRoomId && (
-        <InviteModal
-          isOpen={isInviteOpen}
-          onClose={() => setIsInviteOpen(false)}
-          roomId={activeRoomId}
-        />
+      {room && (
+        <>
+          <RoomInfoPanel
+            isOpen={isInfoOpen}
+            roomId={room.id}
+            onClose={() => setIsInfoOpen(false)}
+            onInvite={() => setIsInviteOpen(true)}
+          />
+          <InviteModal
+            isOpen={isInviteOpen}
+            onClose={() => setIsInviteOpen(false)}
+            roomId={room.id}
+          />
+        </>
       )}
     </>
   );
 };
+
+const MenuItem: React.FC<{
+  icon: React.ComponentProps<typeof Icon>['name'];
+  label: string;
+  danger?: boolean;
+  onClick: () => void;
+}> = ({ icon, label, danger = false, onClick }) => (
+  <button
+    type="button"
+    role="menuitem"
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-sm text-left transition-colors focus:outline-none focus-visible:bg-slate-700/60 ${
+      danger
+        ? 'text-red-400 hover:bg-red-500/10'
+        : 'text-slate-200 hover:bg-slate-700/60'
+    }`}
+  >
+    <Icon name={icon} size={18} />
+    {label}
+  </button>
+);

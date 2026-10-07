@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { getApiErrorMessage } from '../../../api/axios';
 import { RoomsApi } from '../../../api/services/roomsApi';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
@@ -26,8 +27,8 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
     try {
       const res = await RoomsApi.getInviteToken(roomId);
       setInviteToken(res.inviteToken);
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t('invite.token_error'));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || t('invite.token_error'));
     } finally {
       setIsLoading(false);
     }
@@ -39,8 +40,8 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
       const res = await RoomsApi.regenerateInviteToken(roomId);
       setInviteToken(res.inviteToken);
       toast.success(t('invite.regenerate_success', 'Token regenerated!'));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t('invite.token_error'));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || t('invite.token_error'));
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +51,8 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
     if (isOpen && mode === 'link' && !inviteToken) {
       handleGetLink();
     }
+    // Only re-run when the modal opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -68,8 +71,8 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
       const res = await RoomsApi.inviteByUsername(roomId, username.trim());
       toast.success(res.message || t('invite.invite_success'));
       setUsername('');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || t('invite.invite_error'));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error) || t('invite.invite_error'));
     } finally {
       setIsLoading(false);
     }
@@ -96,12 +99,12 @@ export const InviteModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
         <button
           onClick={onClose}
           aria-label={t('common.close', 'Close')}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white text-2xl font-bold leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-50 text-2xl font-bold leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           &times;
         </button>
 
-        <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-white mb-6 text-center">
+        <h2 id="modal-title" className="text-xl sm:text-2xl font-bold text-slate-50 mb-6 text-center">
           {t('invite.title')}
         </h2>
 

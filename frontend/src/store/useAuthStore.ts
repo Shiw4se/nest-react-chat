@@ -4,11 +4,13 @@ import { authApi } from '../api/services/authApi';
 import type { UserData } from '../types/auth';
 import { useRoomStore } from '../store/useRoomStore';
 import { useChatStore } from '../store/useChatStore';
+import { WebSocketManager } from '../websockets/services/WebSocketManager';
 
 interface AuthState {
   user: UserData | null;
   token: string | null;
   setAuth: (user: UserData, token: string) => void;
+  updateUser: (patch: Partial<UserData>) => void;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
   clearAuth: () => void;
@@ -22,13 +24,21 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (user, token) => set({ user, token }),
 
+      updateUser: (patch) =>
+        set((state) => (state.user ? { user: { ...state.user, ...patch } } : {})),
+
       login: async (username, password) => {
         useRoomStore.getState().clearRooms();
         useChatStore.getState().clearMessages();
 
         const data = await authApi.login(username, password);
         const token = data.accessToken;
-        const user = { id: data.user.id, username: data.user.username } as UserData;
+        const user: UserData = {
+          id: data.user.id,
+          username: data.user.username,
+          displayName: data.user.displayName ?? null,
+          avatarUrl: data.user.avatarUrl ?? null,
+        };
         set({ user, token });
       },
 
@@ -37,6 +47,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearAuth: () => {
+        WebSocketManager.getInstance().disconnect();
         set({ user: null, token: null });
         useRoomStore.getState().clearRooms();
         useChatStore.getState().clearMessages();

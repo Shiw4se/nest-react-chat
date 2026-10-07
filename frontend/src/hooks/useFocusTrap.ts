@@ -23,6 +23,9 @@ export const useFocusTrap = (isOpen: boolean, onClose: () => void) => {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Inline editors mark themselves so Esc cancels the edit, not the dialog
+        const target = e.target as HTMLElement | null;
+        if (target?.closest?.('[data-own-escape]')) return;
         onClose();
         return;
       }

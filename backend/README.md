@@ -57,10 +57,10 @@ npm run start:prod
 
 ### WebSocket Events (Socket.IO)
 
-* **Connection:** Requires JWT token in the authentication payload (`WsJwtGuard`).
+* **Connection:** Requires a JWT token in the handshake `auth` payload; verified in `ChatGateway.handleConnection`.
 * **`join` (Emit):** Subscribes the client to a specific chat room.
   * Payload: `{ "room": "general" }`
-* **`SendMessage` (Emit):** Sends a message to a room and saves it to the database.
+* **`sendMessage` (Emit):** Sends a message to a room and saves it to the database.
   * Payload: `{ "room": "general", "message": "Hello world!" }`
 * **`newMessage` (Listen):** Broadcasted by the server when a new message is posted in the room.
   * Payload: Message object including sender details.

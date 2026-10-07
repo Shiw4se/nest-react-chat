@@ -1,8 +1,8 @@
-// 1. Создаем обычный JavaScript объект и "замораживаем" его через as const
+// Plain object frozen with `as const`, so values stay literal types
 export const ModalMode = {
   CREATE: 'create',
   JOIN: 'join',
 } as const;
 
-// 2. Вытягиваем из него TypeScript-тип (этот код "сотрется" при сборке)
+// Union type derived from the object (erased at build time)
 export type ModalModeType = (typeof ModalMode)[keyof typeof ModalMode];

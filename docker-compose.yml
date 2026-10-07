@@ -1,0 +1,54 @@
+# Whole stack with one command:
+#   docker compose up --build
+# then open http://localhost:8080 (Swagger: http://localhost:8080/docs).
+# Demo data is (re)created on every backend start; set SEED_DEMO=false to skip.
+name: nest-react-chat
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: chat
+      POSTGRES_PASSWORD: chat
+      POSTGRES_DB: chat
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chat -d chat"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://chat:chat@db:5432/chat
+      JWT_SECRET: ${JWT_SECRET:-local-docker-secret-change-me}
+      FRONTEND_URL: http://localhost:8080
+      TRUST_PROXY: 1
+      SEED_DEMO: ${SEED_DEMO:-true}
+      STORAGE_DRIVER: local
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_DEMO_ACCOUNTS: demo,alex,maria
+        VITE_DEMO_PASSWORD: Demo1234
+    environment:
+      BACKEND_URL: http://backend:3000
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  uploads:

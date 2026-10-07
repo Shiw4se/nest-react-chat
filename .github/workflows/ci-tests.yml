@@ -1,4 +1,4 @@
-name: "CI/CD - Build, Test & Deploy"
+name: "CI - Lint, Build & Test"
 
 on:
   push:
@@ -8,13 +8,8 @@ on:
 
 jobs:
   test:
-    name: "Run Unit Tests"
+    name: "Lint, build and unit tests"
     runs-on: ubuntu-latest
-
-    env:
-      TEST_ENV: "ci"
-      JWT_SECRET: "${{ secrets.JWT_SECRET }}"
-      VITE_API_URL: "${{ secrets.VITE_API_URL }}"
 
     steps:
       - name: Checkout code
@@ -23,52 +18,108 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: '**/package-lock.json'
 
       - name: Install Backend dependencies
-        run: cd backend && npm install
+        run: cd backend && npm ci
 
       - name: Generate Prisma client
-        run: cd backend && npx prisma generate      
-      
+        run: cd backend && npx prisma generate
+
+      - name: Lint Backend
+        run: cd backend && npx eslint "{src,test}/**/*.ts"
+
+      - name: Build Backend
+        run: cd backend && npm run build
+
       - name: Run Backend tests
         run: cd backend && npm test
 
+      - name: Run Backend e2e tests
+        run: cd backend && npm run test:e2e
+
       - name: Install Frontend dependencies
-        run: cd frontend && npm install
-      
+        run: cd frontend && npm ci
+
+      - name: Lint Frontend
+        run: cd frontend && npm run lint
+
+      - name: Build Frontend
+        run: cd frontend && npm run build
+
       - name: Run Frontend tests
         run: cd frontend && npm test
 
-  deploy:
-    name: "Deploy to AWS EC2"
-    needs: test 
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' 
+  browser:
+    name: "Browser tests (Playwright)"
     runs-on: ubuntu-latest
+    needs: test
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      CI: "true"
+      PORT: "3000"
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chat
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chat
+      JWT_SECRET: ci-e2e-secret
+      FRONTEND_URL: http://localhost:5173
+      # The suite registers and logs in users quickly; production keeps 5/min
+      AUTH_THROTTLE_LIMIT: "1000"
 
     steps:
-      - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |  
-          
-            cd ~/nest-react-chat            
-           
-            git pull origin main
-            
-           
-            cd backend
-            npm install
-            npx prisma generate
-            npm run build
-           
-            pm2 restart chat-backend            
-          
-            cd ../frontend
-            npm install
-            npm run build
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Prepare backend (install, migrate, build)
+        run: |
+          cd backend
+          npm ci
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run build
+
+      - name: Install frontend
+        run: cd frontend && npm ci
+
+      - name: Install Playwright
+        run: |
+          cd e2e
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # playwright.config.ts starts the API and the Vite dev server itself
+      - name: Run browser tests
+        run: cd e2e && npx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7

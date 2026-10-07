@@ -1,5 +1,5 @@
 import api from '../axios';
-import type { Room } from '../../types/room';
+import type { Room, RoomDetails } from '../../types/room';
 import { API_ROUTES } from '../../constants/apiRoutes';
 
 export const RoomsApi = {
@@ -13,6 +13,11 @@ export const RoomsApi = {
     return data;
   },
 
+  getRoom: async (roomId: string): Promise<RoomDetails> => {
+    const { data } = await api.get<RoomDetails>(API_ROUTES.ROOMS.DETAILS(roomId));
+    return data;
+  },
+
   createRoom: async (name: string, type: 'PUBLIC' | 'PRIVATE'): Promise<Room> => {
     const { data } = await api.post<Room>(API_ROUTES.ROOMS.CREATE, { name, type });
     return data;
@@ -20,6 +25,16 @@ export const RoomsApi = {
 
   joinByToken: async (inviteToken: string): Promise<Room> => {
     const { data } = await api.post<Room>(API_ROUTES.ROOMS.JOIN(inviteToken));
+    return data;
+  },
+
+  leaveRoom: async (roomId: string): Promise<{ message: string }> => {
+    const { data } = await api.post(API_ROUTES.ROOMS.LEAVE(roomId));
+    return data;
+  },
+
+  deleteRoom: async (roomId: string): Promise<{ message: string }> => {
+    const { data } = await api.delete(API_ROUTES.ROOMS.DETAILS(roomId));
     return data;
   },
 
@@ -33,8 +48,8 @@ export const RoomsApi = {
     return data;
   },
 
-  regenerateInviteToken: async (roomId: string) => {
-    const response = await api.patch(API_ROUTES.ROOMS.REGENERATE_INVITE_TOKEN(roomId));
-    return response.data;
+  regenerateInviteToken: async (roomId: string): Promise<{ inviteToken: string }> => {
+    const { data } = await api.patch(API_ROUTES.ROOMS.REGENERATE_INVITE_TOKEN(roomId));
+    return data;
   },
 };

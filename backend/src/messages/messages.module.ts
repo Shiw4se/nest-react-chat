@@ -3,7 +3,7 @@ import { MessagesService } from './messages.service';
 import { MessagesController } from './messages.controller';
 import { MessagesRepository } from './messages.repository';
 import { PrismaModule } from '../prisma/prisma.module';
-import { RoomsModule } from 'src/rooms/rooms.module';
+import { RoomsModule } from '../rooms/rooms.module';
 
 @Module({
   imports: [PrismaModule, RoomsModule],

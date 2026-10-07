@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { RoomsService } from '../rooms.service';
-import { RequestWithUser } from 'src/auth/interfaces/auth.interfaces';
+import { RequestWithUser } from '../../auth/interfaces/auth.interfaces';
 
 @Injectable()
 export class RoomAccessGuard implements CanActivate {
