@@ -139,7 +139,9 @@
     "deleted": "ルームを削除しました",
     "leave_error": "ルームを退出できませんでした",
     "delete_error": "ルームを削除できませんでした",
-    "load_error": "ルーム情報を読み込めませんでした"
+    "load_error": "ルーム情報を読み込めませんでした",
+    "added_toast": "「{{name}}」に追加されました",
+    "removed_toast": "「{{name}}」はオーナーによって削除されました"
   },
   "profile": {
     "title": "プロフィール",

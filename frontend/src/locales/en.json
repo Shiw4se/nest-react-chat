@@ -141,7 +141,9 @@
     "deleted": "Room deleted",
     "leave_error": "Failed to leave room",
     "delete_error": "Failed to delete room",
-    "load_error": "Failed to load room info"
+    "load_error": "Failed to load room info",
+    "added_toast": "You were added to \"{{name}}\"",
+    "removed_toast": "\"{{name}}\" was deleted by its owner"
   },
   "profile": {
     "title": "Profile",

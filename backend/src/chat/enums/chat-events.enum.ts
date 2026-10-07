@@ -11,5 +11,7 @@ export enum ChatEvents {
   PRESENCE = 'presence',
   MARK_READ = 'markRead',
   ROOM_ACTIVITY = 'roomActivity',
+  ROOM_ADDED = 'roomAdded',
+  ROOM_REMOVED = 'roomRemoved',
   PRESENCE_SNAPSHOT = 'presenceSnapshot',
 }

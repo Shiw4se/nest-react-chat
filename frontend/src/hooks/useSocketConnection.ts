@@ -16,6 +16,12 @@ interface RoomActivityEvent {
   lastMessage: MessagePreview | null;
 }
 
+interface RoomRemovedEvent {
+  roomId: string;
+  roomName: string;
+  deletedBy: string;
+}
+
 interface PresenceEvent {
   userId: string;
   online: boolean;
@@ -68,7 +74,21 @@ export const useSocketConnection = () => {
       rooms.applyActivity(roomId, lastMessage, isNewFromOthers && !isViewing);
     };
 
+    const onRoomAdded = ({ roomName }: { roomId: string; roomName: string }) => {
+      void useRoomStore.getState().fetchMyRooms();
+      toast.success(i18n.t('room.added_toast', { name: roomName }));
+    };
+    const onRoomRemoved = ({ roomId, roomName, deletedBy }: RoomRemovedEvent) => {
+      const rooms = useRoomStore.getState();
+      if (rooms.activeRoomId === roomId) useChatStore.getState().clearMessages();
+      rooms.removeRoomLocally(roomId);
+      // The owner already got a confirmation from their own action
+      if (deletedBy !== userId) toast(i18n.t('room.removed_toast', { name: roomName }), { icon: '🗑️' });
+    };
+
     socket.on(SOCKET_EVENTS.CONNECT, onConnect);
+    socket.on(SOCKET_EVENTS.ROOM_ADDED, onRoomAdded);
+    socket.on(SOCKET_EVENTS.ROOM_REMOVED, onRoomRemoved);
     socket.on(SOCKET_EVENTS.ROOM_ACTIVITY, onRoomActivity);
     socket.on(SOCKET_EVENTS.DISCONNECT, onDisconnect);
     socket.on(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
@@ -82,6 +102,8 @@ export const useSocketConnection = () => {
 
     return () => {
       socket.off(SOCKET_EVENTS.CONNECT, onConnect);
+      socket.off(SOCKET_EVENTS.ROOM_ADDED, onRoomAdded);
+      socket.off(SOCKET_EVENTS.ROOM_REMOVED, onRoomRemoved);
       socket.off(SOCKET_EVENTS.ROOM_ACTIVITY, onRoomActivity);
       socket.off(SOCKET_EVENTS.DISCONNECT, onDisconnect);
       socket.off(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);

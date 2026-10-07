@@ -26,6 +26,8 @@ interface RoomState {
   /** Live update from the server: new preview, optional unread bump, re-sort */
   applyActivity: (roomId: string, lastMessage: MessagePreview | null, countsAsUnread: boolean) => void;
   clearUnread: (roomId: string) => void;
+  /** Drops a room that no longer exists (deleted by its owner) */
+  removeRoomLocally: (roomId: string) => void;
   clearRooms: () => void;
 }
 
@@ -134,6 +136,13 @@ export const useRoomStore = create<RoomState>((set, get) => ({
   clearUnread: (roomId) =>
     set((state) => ({
       myRooms: state.myRooms.map((r) => (r.id === roomId ? { ...r, unreadCount: 0 } : r)),
+    })),
+
+  removeRoomLocally: (roomId) =>
+    set((state) => ({
+      myRooms: state.myRooms.filter((r) => r.id !== roomId),
+      publicRooms: state.publicRooms.filter((r) => r.id !== roomId),
+      activeRoomId: state.activeRoomId === roomId ? null : state.activeRoomId,
     })),
 
   clearRooms: () => set({ myRooms: [], publicRooms: [], activeRoomId: null }),

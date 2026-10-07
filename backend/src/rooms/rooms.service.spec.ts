@@ -4,6 +4,8 @@ import { RoomsService } from './rooms.service';
 import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { PresenceService } from '../realtime/presence.service';
+import { RealtimeService } from '../realtime/realtime.service';
+import { ChatEvents } from '../chat/enums/chat-events.enum';
 
 describe('RoomsService', () => {
   let service: RoomsService;
@@ -16,10 +18,13 @@ describe('RoomsService', () => {
     findByInviteToken: jest.fn(),
     findMember: jest.fn(),
     findMembers: jest.fn(),
+    findMemberIds: jest.fn(),
     addMember: jest.fn(),
     removeMember: jest.fn(),
     delete: jest.fn(),
   };
+
+  const mockRealtime = { toUser: jest.fn(), toUsers: jest.fn() };
 
   const mockPrismaService = {
     user: { findUnique: jest.fn() },
@@ -35,6 +40,7 @@ describe('RoomsService', () => {
           useValue: mockRoomsRepository,
         },
         PresenceService,
+        { provide: RealtimeService, useValue: mockRealtime },
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -87,9 +93,16 @@ describe('RoomsService', () => {
         ownerId: 'owner',
       });
 
+      mockRoomsRepository.findMemberIds.mockResolvedValue(['owner', 'u1']);
+
       await service.deleteRoom('owner', 'room-1');
 
       expect(mockRoomsRepository.delete).toHaveBeenCalledWith('room-1');
+      expect(mockRealtime.toUsers).toHaveBeenCalledWith(
+        ['owner', 'u1'],
+        ChatEvents.ROOM_REMOVED,
+        expect.objectContaining({ roomId: 'room-1', deletedBy: 'owner' }),
+      );
     });
 
     it('rejects non-owners', async () => {
@@ -126,6 +139,33 @@ describe('RoomsService', () => {
         expect.objectContaining({ id: 'owner', isOwner: true }),
         expect.objectContaining({ id: 'u1', isOwner: false }),
       ]);
+    });
+  });
+
+  describe('inviteByUsername', () => {
+    it('adds the member and notifies them live', async () => {
+      mockRoomsRepository.findById.mockResolvedValue({
+        id: 'room-1',
+        name: 'Team',
+        ownerId: 'owner',
+      });
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'u2' });
+      mockRoomsRepository.findMember.mockResolvedValue(null);
+
+      await service.inviteByUsername('owner', 'room-1', 'bob');
+
+      expect(mockRoomsRepository.addMember).toHaveBeenCalledWith(
+        'u2',
+        'room-1',
+      );
+      expect(mockRealtime.toUser).toHaveBeenCalledWith(
+        'u2',
+        ChatEvents.ROOM_ADDED,
+        {
+          roomId: 'room-1',
+          roomName: 'Team',
+        },
+      );
     });
   });
 });

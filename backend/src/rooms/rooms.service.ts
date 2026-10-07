@@ -12,6 +12,8 @@ import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { PresenceService } from '../realtime/presence.service';
+import { RealtimeService } from '../realtime/realtime.service';
+import { ChatEvents } from '../chat/enums/chat-events.enum';
 
 @Injectable()
 export class RoomsService {
@@ -20,6 +22,7 @@ export class RoomsService {
     private readonly roomsRepository: IRoomsRepository,
     private readonly prisma: PrismaService,
     private readonly presence: PresenceService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   async create(userId: string, createRoomDto: CreateRoomDto) {
@@ -93,6 +96,11 @@ export class RoomsService {
     if (existing)
       throw new ConflictException(`User "${username}" is already a member`);
     await this.roomsRepository.addMember(targetUser.id, roomId);
+    // The invited user sees the room appear without reloading
+    this.realtime.toUser(targetUser.id, ChatEvents.ROOM_ADDED, {
+      roomId,
+      roomName: room.name,
+    });
     return { message: `User "${username}" successfully invited` };
   }
 
@@ -138,7 +146,14 @@ export class RoomsService {
     if (!room) throw new NotFoundException('Room not found');
     if (room.ownerId !== userId)
       throw new ForbiddenException('Only the owner can delete the room');
+    // Collect members first: the cascade removes the membership rows
+    const memberIds = await this.roomsRepository.findMemberIds(roomId);
     await this.roomsRepository.delete(roomId);
+    this.realtime.toUsers(memberIds, ChatEvents.ROOM_REMOVED, {
+      roomId,
+      roomName: room.name,
+      deletedBy: userId,
+    });
     return { message: 'Room deleted' };
   }
 

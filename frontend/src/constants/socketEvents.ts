@@ -19,6 +19,8 @@ export const SOCKET_EVENTS = {
   PRESENCE: 'presence',
   MARK_READ: 'markRead',
   ROOM_ACTIVITY: 'roomActivity',
+  ROOM_ADDED: 'roomAdded',
+  ROOM_REMOVED: 'roomRemoved',
   PRESENCE_SNAPSHOT: 'presenceSnapshot',
   EXCEPTION: 'exception',
 } as const;
