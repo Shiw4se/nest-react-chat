@@ -213,7 +213,7 @@ frontend/src/
   locales/      en, uk, pl, ja
 e2e/            Playwright tests and the screenshot / GIF capture script
 docs/           deployment guide, screenshots, demo GIF
-.github/workflows/  lint + build + unit + browser tests, automated PR review
+.github/workflows/  lint + build + unit + browser tests
 ```
 
 ## Configuration
