@@ -9,7 +9,9 @@
 
 A Telegram-style real-time chat: public and private rooms, replies, reactions, photos, online presence and unread counters, built with NestJS, Socket.IO, PostgreSQL and React.
 
-**Try it:** `docker compose up --build`, open http://localhost:8080 and press **Try the demo**. The demo opens with sample rooms and conversations already loaded.
+**Live demo:** https://chat-frontend-cvg2.onrender.com — press **Try the demo** (free tier: the first load can take about a minute while the server wakes up).
+
+**Run locally:** `docker compose up --build`, open http://localhost:8080 and press **Try the demo**. The demo opens with sample rooms and conversations already loaded.
 
 <p align="center">
   <img src="docs/demo.gif" alt="Two users chatting live: typing indicator, message, reaction and reply appear instantly in both windows" width="100%">
