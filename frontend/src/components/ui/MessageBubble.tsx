@@ -42,7 +42,7 @@ const ActionButton: React.FC<{
       onClick();
     }}
     className={`p-1.5 rounded-full text-slate-400 hover:bg-slate-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 ${
-      danger ? 'hover:text-red-400' : 'hover:text-white'
+      danger ? 'hover:text-red-400' : 'hover:text-slate-50'
     }`}
   >
     <Icon name={icon} size={16} />

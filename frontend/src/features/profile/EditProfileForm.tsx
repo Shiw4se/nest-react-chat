@@ -22,7 +22,7 @@ interface Props {
 }
 
 const fieldClass =
-  'w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-[15px] text-white placeholder:text-slate-500 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30';
+  'w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-[15px] text-slate-50 placeholder:text-slate-500 outline-none transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30';
 
 export const EditProfileForm: React.FC<Props> = ({
   profile,

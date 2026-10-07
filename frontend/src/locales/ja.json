@@ -216,5 +216,11 @@
     "drop_here": "ドロップして画像を送信",
     "viewer": "画像ビューア",
     "open_original": "元の画像を開く"
+  },
+  "theme": {
+    "label": "テーマ: {{mode}}",
+    "system": "システム",
+    "light": "ライト",
+    "dark": "ダーク"
   }
 }

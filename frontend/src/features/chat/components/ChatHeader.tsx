@@ -108,7 +108,7 @@ export const ChatHeader: React.FC<Props> = ({ room }) => {
               />
             </span>
             <span className="min-w-0">
-              <span className="block text-[15px] font-semibold text-white leading-tight truncate">
+              <span className="block text-[15px] font-semibold text-slate-50 leading-tight truncate">
                 {room.name}
               </span>
               <span className={`block text-xs leading-tight truncate ${subtitleTone}`}>

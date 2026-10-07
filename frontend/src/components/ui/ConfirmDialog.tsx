@@ -41,7 +41,7 @@ export const ConfirmDialog: React.FC<Props> = ({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-5 animate-pop"
       >
-        <h3 id="confirm-title" className="text-lg font-bold text-white">
+        <h3 id="confirm-title" className="text-lg font-bold text-slate-50">
           {title}
         </h3>
         <p id="confirm-desc" className="mt-2 text-sm text-slate-400 leading-relaxed">

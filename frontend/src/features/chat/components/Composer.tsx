@@ -157,7 +157,7 @@ export const Composer: React.FC<Props> = ({
           }}
           placeholder={t('chat.placeholder')}
           aria-label={t('chat.message_input_label', 'Type a message')}
-          className="flex-1 min-h-11 resize-none overflow-y-auto text-[15px] leading-snug bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl px-4 py-2.5 transition-colors"
+          className="flex-1 min-h-11 resize-none overflow-y-auto text-[15px] leading-snug bg-slate-900/80 border border-slate-700 text-slate-50 placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl px-4 py-2.5 transition-colors"
         />
         <Button
           onClick={submit}

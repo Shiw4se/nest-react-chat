@@ -21,7 +21,7 @@ export const Button: React.FC<ButtonProps> = ({
     danger:
       'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 px-4 py-2 text-sm border border-red-500/30 rounded-lg',
     text: 'text-blue-400 hover:text-blue-300 font-medium hover:underline p-0 active:scale-100 bg-transparent',
-    icon: 'text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-full h-10 w-10 p-0 bg-transparent',
+    icon: 'text-slate-400 hover:text-slate-50 hover:bg-slate-700/60 rounded-full h-10 w-10 p-0 bg-transparent',
   };
 
   return (

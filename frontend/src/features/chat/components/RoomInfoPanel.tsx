@@ -97,7 +97,7 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
           <Button variant="icon" onClick={onClose} aria-label={t('common.close', 'Close')}>
             <Icon name="close" />
           </Button>
-          <h2 id="room-info-title" className="text-base font-semibold text-white">
+          <h2 id="room-info-title" className="text-base font-semibold text-slate-50">
             {t('room.info', 'Room info')}
           </h2>
         </header>
@@ -113,7 +113,7 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
             <>
               <section className="flex flex-col items-center text-center px-6 pt-8 pb-6 bg-gradient-to-b from-slate-800 to-slate-800/0">
                 <Avatar name={room.name} size="xl" shape="rounded" className="shadow-xl" />
-                <h3 className="mt-4 text-xl font-bold text-white break-all">{room.name}</h3>
+                <h3 className="mt-4 text-xl font-bold text-slate-50 break-all">{room.name}</h3>
                 <p className="mt-1 text-sm text-slate-400 flex items-center gap-1.5">
                   <Icon name={isPrivate ? 'lock' : 'globe'} size={14} />
                   {isPrivate ? t('chat.room_private') : t('chat.room_public')} ·{' '}

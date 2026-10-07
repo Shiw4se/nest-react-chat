@@ -4,6 +4,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { LanguageSwitcher } from './chat/components/LanguageSwitcher';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useJoinForm } from '../hooks/useJoinForm';
 
 export const JoinForm: React.FC = () => {
@@ -17,7 +18,7 @@ export const JoinForm: React.FC = () => {
           <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white shadow-xl shadow-blue-900/40">
             <Icon name="chat" size={30} />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-white">
+          <h1 className="mt-4 text-2xl font-bold text-slate-50">
             {isRegisterMode ? t('auth.create_account') : t('auth.log_in')}
           </h1>
           <p className="mt-1 text-sm text-slate-400">{t('auth.tagline', 'Fast, simple chat rooms.')}</p>
@@ -85,8 +86,9 @@ export const JoinForm: React.FC = () => {
           </p>
         </form>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex items-center justify-center gap-2">
           <LanguageSwitcher />
+          <ThemeToggle />
         </div>
       </main>
     </div>

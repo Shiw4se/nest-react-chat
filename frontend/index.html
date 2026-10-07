@@ -12,6 +12,18 @@
       rel="stylesheet"
     />
     <title>Chat</title>
+    <script>
+      // Apply the saved theme before first paint (no dark/light flash).
+      // Mirrors resolveTheme() in src/utils/theme.ts.
+      (function () {
+        var pref = 'system';
+        try {
+          pref = JSON.parse(localStorage.getItem('ui-storage') || '{}').state.theme || 'system';
+        } catch (e) {}
+        var light = pref === 'light' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
+        document.documentElement.dataset.theme = light ? 'light' : 'dark';
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

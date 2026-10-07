@@ -231,5 +231,11 @@
     "drop_here": "Upuść obraz, aby go wysłać",
     "viewer": "Podgląd obrazu",
     "open_original": "Otwórz oryginał"
+  },
+  "theme": {
+    "label": "Motyw: {{mode}}",
+    "system": "systemowy",
+    "light": "jasny",
+    "dark": "ciemny"
   }
 }

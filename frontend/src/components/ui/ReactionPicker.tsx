@@ -43,7 +43,7 @@ export const ReactionPicker: React.FC<Props> = ({ onPick, align }) => {
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
+        className="p-1.5 rounded-full text-slate-400 hover:text-slate-50 hover:bg-slate-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70"
       >
         <Icon name="smile" size={16} />
       </button>

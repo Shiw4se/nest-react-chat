@@ -114,6 +114,8 @@ GitHub Actions runs on push to `main` and PRs. For each package: install, `prism
 
 **Chat UI (Telegram-style):** `ChatHeader` shows the room avatar, name and a live subtitle (members / typing / connection); clicking it or the ⋮ menu opens `RoomInfoPanel` (members list, invite for private-room owners, leave or delete with `ConfirmDialog`). Logout and the language switcher live in the `Sidebar` user bar. Messages are grouped and given day separators by `utils/messageRows.ts`. Shared primitives: `Avatar` (deterministic gradient from `utils/avatar.ts`), `Icon` (inline SVG set), `Button` variants `primary | secondary | danger | text | icon`.
 
+**Theming:** components are written against the dark slate scale (slate-900 page, slate-800 panels, slate-700 surfaces, slate-50…400 text). `index.css` remaps those Tailwind colour variables under `:root[data-theme='light']`, so new components get a light theme for free as long as they follow that convention: use `text-slate-50` for primary text and keep `text-white` only on coloured backgrounds (blue buttons, own bubbles, badges). `useUIStore.theme` (`system | light | dark`, persisted) is applied by `useApplyTheme` in `App`; an inline script in `index.html` applies it before first paint.
+
 **i18n:** `react-i18next`, config in `src/config/i18n.ts`, translations in `src/locales/` keyed by real BCP 47 codes (`en`, `uk`, `pl`, `ja`) so Intl dates and plural rules (`_one/_few/_many/_other`) work; the switcher shows country-style labels (UA, JP). The chosen language is cached in localStorage.
 
 **Dev proxy:** Vite proxies `/auth` and `/socket.io` to the backend, so the frontend uses relative URLs in development.

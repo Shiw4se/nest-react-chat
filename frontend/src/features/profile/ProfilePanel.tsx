@@ -148,7 +148,7 @@ export const ProfilePanel: React.FC<Props> = ({ userId, onClose }) => {
               <Icon name="back" />
             </Button>
           )}
-          <h2 id="profile-title" className="flex-1 text-base font-semibold text-white">
+          <h2 id="profile-title" className="flex-1 text-base font-semibold text-slate-50">
             {title}
           </h2>
           {isMe && mode === 'view' && profile && (
@@ -186,7 +186,7 @@ export const ProfilePanel: React.FC<Props> = ({ userId, onClose }) => {
                   size="xl"
                   className="shadow-xl"
                 />
-                <h3 className="mt-4 text-xl font-bold text-white break-all">{nameOf(profile)}</h3>
+                <h3 className="mt-4 text-xl font-bold text-slate-50 break-all">{nameOf(profile)}</h3>
                 <PresenceLabel
                   userId={profile.id}
                   isOnline={profile.isOnline}
@@ -268,7 +268,7 @@ const InfoRow: React.FC<{
 
 const Stat: React.FC<{ value: number; label: string }> = ({ value, label }) => (
   <div>
-    <div className="text-lg font-bold text-white tabular-nums">{value}</div>
+    <div className="text-lg font-bold text-slate-50 tabular-nums">{value}</div>
     <div className="text-[11px] uppercase tracking-wide text-slate-500">{label}</div>
   </div>
 );

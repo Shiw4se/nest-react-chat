@@ -9,6 +9,7 @@ import { useChatStore } from '../../../store/useChatStore';
 import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { CreateRoomModal } from './CreateRoomModal';
 import { RoomListItem } from './RoomListItem';
 import { useNow } from '../../../hooks/useNow';
@@ -74,7 +75,7 @@ export const Sidebar: React.FC = () => {
                 size="sm"
               />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-white truncate">
+                <span className="block text-sm font-semibold text-slate-50 truncate">
                   {nameOf(currentUser)}
                 </span>
                 <span
@@ -85,6 +86,7 @@ export const Sidebar: React.FC = () => {
               </span>
             </button>
           )}
+          <ThemeToggle />
           <LanguageSwitcher />
           <Button
             variant="icon"
@@ -106,7 +108,7 @@ export const Sidebar: React.FC = () => {
                 onClick={() => setView(tab)}
                 className={`flex-1 py-2 text-sm min-h-10 rounded-lg font-medium transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 ${
                   view === tab
-                    ? 'bg-slate-700 text-white shadow'
+                    ? 'bg-slate-700 text-slate-50 shadow'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >

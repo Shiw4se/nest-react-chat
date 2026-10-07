@@ -60,7 +60,7 @@ export const AttachmentDialog: React.FC<Props> = ({ roomId, file, replyTo, onClo
         className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden animate-pop"
       >
         <header className="flex items-center gap-2 px-4 py-3">
-          <h2 id="attachment-title" className="flex-1 text-base font-semibold text-white">
+          <h2 id="attachment-title" className="flex-1 text-base font-semibold text-slate-50">
             {t('attachment.send_photo')}
           </h2>
           <Button variant="icon" onClick={onClose} disabled={isUploading} aria-label={t('common.close', 'Close')}>
@@ -93,7 +93,7 @@ export const AttachmentDialog: React.FC<Props> = ({ roomId, file, replyTo, onClo
             disabled={isUploading}
             placeholder={t('attachment.caption_placeholder')}
             aria-label={t('attachment.caption_placeholder')}
-            className="flex-1 min-h-11 bg-slate-900/80 border border-slate-700 rounded-xl px-4 text-[15px] text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="flex-1 min-h-11 bg-slate-900/80 border border-slate-700 rounded-xl px-4 text-[15px] text-slate-50 placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
           <Button type="submit" disabled={isUploading} className="min-h-11 px-5">
             {isUploading ? `${progress}%` : t('chat.send')}

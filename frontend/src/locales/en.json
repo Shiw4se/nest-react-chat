@@ -221,5 +221,11 @@
     "drop_here": "Drop an image to send it",
     "viewer": "Image viewer",
     "open_original": "Open original"
+  },
+  "theme": {
+    "label": "Theme: {{mode}}",
+    "system": "system",
+    "light": "light",
+    "dark": "dark"
   }
 }

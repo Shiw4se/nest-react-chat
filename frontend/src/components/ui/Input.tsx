@@ -41,7 +41,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
     border border-slate-600
     rounded-xl
     outline-none
-    text-white placeholder:text-slate-500
+    text-slate-50 placeholder:text-slate-500
     transition-all duration-150
     focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30
     break-words
