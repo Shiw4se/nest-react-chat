@@ -28,7 +28,7 @@ export const DEMO_USERS: DemoUser[] = [
   {
     username: 'maria',
     displayName: 'Maria Kovalenko',
-    bio: 'Product designer in Kyiv. Mountains on weekends 🏔',
+    bio: 'Product designer in Kyiv. Mountains on weekends.',
     avatar: ['#f97316', '#e11d48', '#fde68a'],
   },
   {
@@ -129,7 +129,7 @@ export const DEMO_ROOMS: DemoRoom[] = [
     ],
   },
   {
-    name: 'Weekend Hike 🏔',
+    name: 'Weekend Hike',
     type: 'PRIVATE',
     owner: 'maria',
     members: ['maria', 'sam', 'demo'],
