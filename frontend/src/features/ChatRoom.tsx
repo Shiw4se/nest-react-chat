@@ -33,6 +33,7 @@ export const ChatRoom: React.FC = () => {
     editMessage,
     handleTyping,
     deleteMessage,
+    toggleReaction,
     loadMore,
   } = useChatFacade();
 
@@ -204,6 +205,8 @@ export const ChatRoom: React.FC = () => {
                       onDelete={isMe ? () => deleteMessage(msg.id) : undefined}
                       onAuthorClick={() => openProfile(msg.userId)}
                       onQuoteClick={jumpToMessage}
+                      onReact={(emoji) => toggleReaction(msg.id, emoji)}
+                      currentUserId={user.id}
                     />
                   );
                 })

@@ -13,6 +13,7 @@ describe('MessagesService', () => {
     findById: jest.fn(),
     delete: jest.fn(),
     updateText: jest.fn(),
+    toggleReaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -117,6 +118,42 @@ describe('MessagesService', () => {
       mockMessagesRepository.findById.mockResolvedValue(own);
       await expect(
         messagesService.editMessage('m1', 'u1', 'room-2', 'x'),
+      ).rejects.toThrow('Message not found');
+    });
+  });
+
+  describe('toggleReaction', () => {
+    it('toggles on a message in the same room', async () => {
+      mockMessagesRepository.findById.mockResolvedValue({
+        id: 'm1',
+        roomId: 'room-1',
+      });
+      mockMessagesRepository.toggleReaction.mockResolvedValue([
+        { emoji: '👍', userId: 'u1' },
+      ]);
+
+      const result = await messagesService.toggleReaction(
+        'm1',
+        'u1',
+        'room-1',
+        '👍',
+      );
+
+      expect(mockMessagesRepository.toggleReaction).toHaveBeenCalledWith(
+        'm1',
+        'u1',
+        '👍',
+      );
+      expect(result).toEqual([{ emoji: '👍', userId: 'u1' }]);
+    });
+
+    it('refuses messages from another room', async () => {
+      mockMessagesRepository.findById.mockResolvedValue({
+        id: 'm1',
+        roomId: 'room-2',
+      });
+      await expect(
+        messagesService.toggleReaction('m1', 'u1', 'room-1', '👍'),
       ).rejects.toThrow('Message not found');
     });
   });

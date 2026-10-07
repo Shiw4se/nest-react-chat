@@ -21,6 +21,7 @@ export const useChatFacade = () => {
     handleTyping,
     deleteMessage,
     editMessage: socketEdit,
+    toggleReaction,
   } = useChatSocket(user, activeRoomId);
   const { loadMore, isLoadingMore } = useChatHistory(activeRoomId);
 
@@ -98,6 +99,7 @@ export const useChatFacade = () => {
     leaveChat,
     handleTyping,
     deleteMessage,
+    toggleReaction,
     loadMore,
   };
 };

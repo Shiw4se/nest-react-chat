@@ -19,6 +19,7 @@ describe('ChatGateway', () => {
     createMessage: jest.fn(),
     deleteMessage: jest.fn(),
     editMessage: jest.fn(),
+    toggleReaction: jest.fn(),
   };
 
   const mockRoomsService = {
@@ -302,6 +303,27 @@ describe('ChatGateway', () => {
         ChatEvents.ERROR,
         {
           message: 'You can only edit your own messages',
+        },
+      );
+    });
+  });
+
+  describe('handleToggleReaction', () => {
+    it('broadcasts the full reaction list to the room', async () => {
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
+      const reactions = [{ emoji: '🔥', userId: 'user-123' }];
+      mockMessagesService.toggleReaction.mockResolvedValue(reactions);
+
+      await gateway.handleToggleReaction(
+        { roomId: 'room-123', messageId: 'm1', emoji: '🔥' },
+        mockAuthenticatedSocket,
+      );
+
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        ChatEvents.REACTIONS_UPDATED,
+        {
+          messageId: 'm1',
+          reactions,
         },
       );
     });

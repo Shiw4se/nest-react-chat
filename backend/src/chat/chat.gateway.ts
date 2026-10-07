@@ -25,6 +25,7 @@ import { JoinRoomDto } from './dto/join-room.dto';
 import { TypingDto } from './dto/typing.dto';
 import { DeleteMessageDto } from './dto/delete-message.dto';
 import { EditMessageDto } from './dto/edit-message.dto';
+import { ToggleReactionDto } from './dto/toggle-reaction.dto';
 import { RoomsService } from '../rooms/rooms.service';
 import { UserRepository } from '../auth/user.repository';
 import { PresenceService } from '../realtime/presence.service';
@@ -281,6 +282,36 @@ export class ChatGateway
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to edit message';
+      client.emit(ChatEvents.ERROR, { message: errorMessage });
+    }
+  }
+
+  @SubscribeMessage(ChatEvents.TOGGLE_REACTION)
+  async handleToggleReaction(
+    @MessageBody() data: ToggleReactionDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (!client.rooms.has(data.roomId)) {
+      client.emit(ChatEvents.ERROR, {
+        message: 'Forbidden: join the room first',
+      });
+      return;
+    }
+
+    try {
+      const reactions = await this.messagesService.toggleReaction(
+        data.messageId,
+        client.user.id,
+        data.roomId,
+        data.emoji,
+      );
+      this.server.to(data.roomId).emit(ChatEvents.REACTIONS_UPDATED, {
+        messageId: data.messageId,
+        reactions,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to react';
       client.emit(ChatEvents.ERROR, { message: errorMessage });
     }
   }

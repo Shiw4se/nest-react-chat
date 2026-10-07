@@ -21,6 +21,7 @@ model User {
   lastSeenAt  DateTime?
   
   messages   Message[]
+  reactions  Reaction[]
   rooms      RoomMember[] 
   ownedRooms Room[]       
   
@@ -75,5 +76,21 @@ model Message {
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
+  reactions Reaction[]
+
   @@index([roomId, createdAt])
+}
+
+/// One emoji from one user on one message; toggling deletes the row
+model Reaction {
+  messageId String
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@id([messageId, userId, emoji])
 }

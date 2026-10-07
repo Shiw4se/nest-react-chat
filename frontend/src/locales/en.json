@@ -35,7 +35,10 @@
     "editing": "Editing message",
     "reply_to": "Reply to {{name}}",
     "save_edit": "Save changes",
-    "reply_not_loaded": "The original message is further up in the history"
+    "reply_not_loaded": "The original message is further up in the history",
+    "react": "React",
+    "reaction_label_one": "{{emoji}}, {{count}} reaction",
+    "reaction_label_other": "{{emoji}}, {{count}} reactions"
   },
   "auth": {
     "create_account": "Create Account",

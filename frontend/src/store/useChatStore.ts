@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ChatMessage } from '../types/chat';
+import type { ChatMessage, Reaction } from '../types/chat';
 
 interface ChatState {
   messages: ChatMessage[];
@@ -18,6 +18,7 @@ interface ChatState {
   removeMessage: (messageId: string) => void;
   /** Replaces an edited message and refreshes quotes of it */
   updateMessage: (msg: ChatMessage) => void;
+  setReactions: (messageId: string, reactions: Reaction[]) => void;
   /** Applies a profile change to every loaded message by that author. */
   updateAuthor: (
     userId: string,
@@ -59,6 +60,11 @@ export const useChatStore = create<ChatState>((set) => ({
         .map((msg) =>
           msg.replyToId === messageId ? { ...msg, replyToId: null, replyTo: null } : msg,
         ),
+    })),
+
+  setReactions: (messageId, reactions) =>
+    set((state) => ({
+      messages: state.messages.map((msg) => (msg.id === messageId ? { ...msg, reactions } : msg)),
     })),
 
   updateMessage: (updated) =>

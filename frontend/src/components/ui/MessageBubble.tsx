@@ -4,6 +4,8 @@ import type { ChatMessage } from '../../types/chat';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { nameOf } from '../../utils/displayName';
+import { groupReactions } from '../../utils/reactions';
+import { ReactionPicker } from './ReactionPicker';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -18,6 +20,8 @@ interface MessageBubbleProps {
   onAuthorClick?: () => void;
   /** Scroll to the quoted message */
   onQuoteClick?: (messageId: string) => void;
+  onReact?: (emoji: string) => void;
+  currentUserId?: string;
 }
 
 const ActionButton: React.FC<{
@@ -52,6 +56,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onReply,
   onAuthorClick,
   onQuoteClick,
+  onReact,
+  currentUserId,
 }) => {
   const { t } = useTranslation();
   const authorName = nameOf(message.user);
@@ -60,6 +66,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     minute: '2-digit',
   });
   const quote = message.replyTo;
+  const reactionGroups = groupReactions(message.reactions, currentUserId);
 
   const actions = (
     <div
@@ -67,6 +74,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         isMe ? 'flex-row-reverse' : ''
       }`}
     >
+      {onReact && <ReactionPicker onPick={onReact} align={isMe ? 'right' : 'left'} />}
       {onReply && <ActionButton icon="reply" label={t('chat.reply')} onClick={onReply} />}
       {onEdit && <ActionButton icon="edit" label={t('chat.edit')} onClick={onEdit} />}
       {onDelete && <ActionButton icon="trash" label={t('chat.delete')} danger onClick={onDelete} />}
@@ -141,18 +149,62 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           </button>
         )}
 
-        <p className="text-[15px] leading-snug whitespace-pre-wrap">
-          {message.message}
-          <span className={`inline-block ${message.editedAt ? 'w-20' : 'w-12'}`} aria-hidden="true" />
-        </p>
-        <span
-          className={`absolute bottom-1 right-2.5 text-[10px] flex gap-1 ${
-            isMe ? 'text-blue-200/80' : 'text-slate-400'
-          }`}
-        >
-          {message.editedAt && <span>{t('chat.edited')}</span>}
-          <time dateTime={message.createdAt}>{time}</time>
-        </span>
+        {(() => {
+          const meta = (
+            <span
+              className={`text-[10px] flex gap-1 whitespace-nowrap ${
+                isMe ? 'text-blue-200/80' : 'text-slate-400'
+              }`}
+            >
+              {message.editedAt && <span>{t('chat.edited')}</span>}
+              <time dateTime={message.createdAt}>{time}</time>
+            </span>
+          );
+          const hasReactions = reactionGroups.length > 0;
+          return (
+            <>
+              <p className="text-[15px] leading-snug whitespace-pre-wrap">
+                {message.message}
+                {/* Reserve room for the time that floats in the last line */}
+                {!hasReactions && (
+                  <span className={`inline-block ${message.editedAt ? 'w-20' : 'w-12'}`} aria-hidden="true" />
+                )}
+              </p>
+              {hasReactions ? (
+                // With reactions the time sits at the end of the reaction row
+                <div className="flex flex-wrap items-end gap-1 mt-1.5 mb-0.5" data-testid="reactions">
+                  {reactionGroups.map((g) => (
+                    <button
+                      key={g.emoji}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReact?.(g.emoji);
+                      }}
+                      aria-pressed={g.mine}
+                      aria-label={t('chat.reaction_label', { emoji: g.emoji, count: g.count })}
+                      className={`inline-flex items-center gap-1 h-6 px-2 rounded-full text-xs font-semibold tabular-nums transition-colors ${
+                        g.mine
+                          ? isMe
+                            ? 'bg-white text-blue-700'
+                            : 'bg-sky-500 text-white'
+                          : isMe
+                            ? 'bg-white/15 text-white hover:bg-white/25'
+                            : 'bg-slate-600/70 text-slate-100 hover:bg-slate-600'
+                      }`}
+                    >
+                      <span className="text-sm leading-none">{g.emoji}</span>
+                      {g.count}
+                    </button>
+                  ))}
+                  <span className="ml-auto pl-2">{meta}</span>
+                </div>
+              ) : (
+                <span className="absolute bottom-1 right-2.5">{meta}</span>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {!isMe && actions}

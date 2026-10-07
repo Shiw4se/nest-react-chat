@@ -34,7 +34,9 @@
     "editing": "メッセージを編集中",
     "reply_to": "{{name}} に返信",
     "save_edit": "変更を保存",
-    "reply_not_loaded": "元のメッセージは履歴のさらに上にあります"
+    "reply_not_loaded": "元のメッセージは履歴のさらに上にあります",
+    "react": "リアクション",
+    "reaction_label_other": "{{emoji}}、{{count}} 件のリアクション"
   },
   "auth": {
     "create_account": "アカウント作成",

@@ -3,12 +3,13 @@ import { useChatStore } from '../store/useChatStore';
 import { useRoomStore } from '../store/useRoomStore';
 import { SOCKET_EVENTS } from '../constants/socketEvents';
 import type { UserData } from '../types/auth';
-import type { ChatMessage } from '../types/chat';
+import type { ChatMessage, Reaction } from '../types/chat';
 import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import { ChatInvoker } from '../websockets/services/ChatInvoker';
 import { DeleteMessageCommand } from '../websockets/commands/DeleteMessageCommand';
 import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
 import { EditMessageCommand } from '../websockets/commands/EditMessageCommand';
+import { ToggleReactionCommand } from '../websockets/commands/ToggleReactionCommand';
 import type { ChatMessagePayload } from '../types/message';
 
 /**
@@ -16,7 +17,7 @@ import type { ChatMessagePayload } from '../types/message';
  * useSocketConnection; this hook only joins/leaves rooms and listens to them.
  */
 export const useChatSocket = (user: UserData | null, roomId: string | null) => {
-  const { addMessage, setTyping, removeMessage, updateMessage } = useChatStore();
+  const { addMessage, setTyping, removeMessage, updateMessage, setReactions } = useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [chatInvoker] = useState(() => new ChatInvoker());
@@ -54,12 +55,16 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     const handleMessageEdited = (message: ChatMessage) => {
       if (message.roomId === roomId) updateMessage(message);
     };
+    const handleReactions = ({ messageId, reactions }: { messageId: string; reactions: Reaction[] }) => {
+      setReactions(messageId, reactions);
+    };
 
     socket.on(SOCKET_EVENTS.CONNECT, join);
     socket.on(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
     socket.on(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
     socket.on(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
     socket.on(SOCKET_EVENTS.MESSAGE_EDITED, handleMessageEdited);
+    socket.on(SOCKET_EVENTS.REACTIONS_UPDATED, handleReactions);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -68,8 +73,9 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
       socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
       socket.off(SOCKET_EVENTS.MESSAGE_EDITED, handleMessageEdited);
+      socket.off(SOCKET_EVENTS.REACTIONS_UPDATED, handleReactions);
     };
-  }, [user, roomId, socket, addMessage, setTyping, removeMessage, updateMessage]);
+  }, [user, roomId, socket, addMessage, setTyping, removeMessage, updateMessage, setReactions]);
 
   const sendMessage = useCallback(
     (payload: ChatMessagePayload) => {
@@ -117,5 +123,13 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     [user, roomId, socket, chatInvoker],
   );
 
-  return { sendMessage, handleTyping, deleteMessage, editMessage, chatInvoker };
+  const toggleReaction = useCallback(
+    (messageId: string, emoji: string) => {
+      if (!user || !roomId) return;
+      chatInvoker.executeCommand(new ToggleReactionCommand(socket, roomId, messageId, emoji));
+    },
+    [user, roomId, socket, chatInvoker],
+  );
+
+  return { sendMessage, handleTyping, deleteMessage, editMessage, toggleReaction, chatInvoker };
 };

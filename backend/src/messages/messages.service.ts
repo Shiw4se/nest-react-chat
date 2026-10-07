@@ -62,6 +62,19 @@ export class MessagesService {
     return this.messagesRepository.findManyByRoom(roomId, cursor, limit);
   }
 
+  async toggleReaction(
+    messageId: string,
+    userId: string,
+    roomId: string,
+    emoji: string,
+  ) {
+    const message = await this.messagesRepository.findById(messageId);
+    if (!message || message.roomId !== roomId) {
+      throw new NotFoundException('Message not found');
+    }
+    return this.messagesRepository.toggleReaction(messageId, userId, emoji);
+  }
+
   async deleteMessage(messageId: string, userId: string) {
     const message = await this.messagesRepository.findById(messageId);
 

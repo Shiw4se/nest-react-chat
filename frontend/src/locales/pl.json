@@ -37,7 +37,12 @@
     "editing": "Edycja wiadomości",
     "reply_to": "Odpowiedź dla {{name}}",
     "save_edit": "Zapisz zmiany",
-    "reply_not_loaded": "Oryginał jest wyżej w historii"
+    "reply_not_loaded": "Oryginał jest wyżej w historii",
+    "react": "Reakcja",
+    "reaction_label_one": "{{emoji}}, {{count}} reakcja",
+    "reaction_label_few": "{{emoji}}, {{count}} reakcje",
+    "reaction_label_many": "{{emoji}}, {{count}} reakcji",
+    "reaction_label_other": "{{emoji}}, {{count}} reakcji"
   },
   "auth": {
     "create_account": "Utwórz konto",

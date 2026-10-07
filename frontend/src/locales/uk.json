@@ -37,7 +37,12 @@
     "editing": "Редагування",
     "reply_to": "Відповідь {{name}}",
     "save_edit": "Зберегти зміни",
-    "reply_not_loaded": "Оригінал вище в історії"
+    "reply_not_loaded": "Оригінал вище в історії",
+    "react": "Реакція",
+    "reaction_label_one": "{{emoji}}, {{count}} реакція",
+    "reaction_label_few": "{{emoji}}, {{count}} реакції",
+    "reaction_label_many": "{{emoji}}, {{count}} реакцій",
+    "reaction_label_other": "{{emoji}}, {{count}} реакції"
   },
   "auth": {
     "create_account": "Створити акаунт",

@@ -14,6 +14,8 @@ export const SOCKET_EVENTS = {
   DELETE_MESSAGE: 'deleteMessage',
   EDIT_MESSAGE: 'editMessage',
   MESSAGE_EDITED: 'messageEdited',
+  TOGGLE_REACTION: 'toggleReaction',
+  REACTIONS_UPDATED: 'reactionsUpdated',
 
   // server -> client: domain errors (forbidden join, failed send) and
   // validation failures (Nest WsException payloads)
