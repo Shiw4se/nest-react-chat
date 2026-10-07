@@ -58,6 +58,7 @@ npm run test -- src/store/useAuthStore.test.ts
 cd e2e
 npm ci && npx playwright install chromium   # once
 npm test                                    # reuses running backend (:3000) and Vite (:5173)
+npm run capture                             # README screenshots + docs/demo.gif from seeded demo data
 ```
 
 Playwright drives two signed-in browsers (users created via the API in `global-setup.ts`, sessions injected through the persisted zustand stores, tour marked as seen) and checks live messages, typing, replies, edits, reactions, deletion, unread badges, photos, presence and theme switching. `global-teardown.ts` deletes the run's users. Auth routes are throttled (`AUTH_THROTTLE_LIMIT`, default 5/min, resolved per request); CI sets it high.

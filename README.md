@@ -7,43 +7,75 @@
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?logo=postgresql&logoColor=white)
 
-A chat application with public and private rooms, live messaging over WebSockets, JWT authentication and persistent history in PostgreSQL.
-NestJS on the backend, React with Zustand on the frontend, tests on both sides and a CI pipeline that lints, builds and tests every push.
+A Telegram-style real-time chat: public and private rooms, replies, reactions, photos, online presence and unread counters, built with NestJS, Socket.IO, PostgreSQL and React.
+
+**Try it:** `docker compose up --build`, open http://localhost:8080 and press **Try the demo**. The demo opens with sample rooms and conversations already loaded.
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Two users chatting live: typing indicator, message, reaction and reply appear instantly in both windows" width="100%">
+</p>
+
+| Dark | Light |
+|---|---|
+| ![Chat in the dark theme](docs/screenshots/chat-dark.png) | ![Chat in the light theme](docs/screenshots/chat-light.png) |
+| ![Room info with members and presence](docs/screenshots/room-info.png) | ![User profile](docs/screenshots/profile.png) |
+| ![Photo message with reactions](docs/screenshots/photo-message.png) | ![Sign-in screen with one-click demo](docs/screenshots/login.png) |
+
+<p align="center">
+  <img src="docs/screenshots/mobile-rooms.png" alt="Room list on a phone" width="260">
+  &nbsp;
+  <img src="docs/screenshots/mobile-chat.png" alt="Chat on a phone" width="260">
+</p>
 
 ## Features
 
-**For users**
-- Public rooms anyone can join, and private rooms entered through an invite link or a direct invite; owners can regenerate the invite token
-- Live messages, typing indicators and join notifications over Socket.IO
-- Message history loaded page by page as you scroll up (cursor-based pagination)
-- Delete your own messages; everyone in the room sees them disappear
-- Registration and login with JWT; the same token protects the REST API and the WebSocket connection
-- Four interface languages: English, Ukrainian, Polish and Japanese
-- Onboarding tour for first-time users and keyboard-accessible modals
+**Messaging**
+- Live messages, typing indicator, edits and deletion that every member sees instantly
+- Replies with a quoted original you can click to jump to; ↑ edits your last message
+- Emoji reactions with live counters
+- Photos: pick, paste or drag & drop, add a caption, open full screen
+- Message history loads page by page as you scroll up
 
-**Under the hood**
-- **One set of business rules** — the WebSocket gateway reuses the same services as the REST API, so rooms, membership and messages behave identically whichever way they are reached
-- **Repository pattern** — repositories are injected by token; `CachedRoomsRepository` wraps the real one and caches the public room list for 30 seconds without the service knowing
-- **Guards** — `JwtAuthGuard` for REST, `RoomAccessGuard` for room membership; socket connections are verified in `ChatGateway.handleConnection`
-- **Frontend WebSocket layer** — a single `WebSocketManager` owns the connection; sending and deleting messages are command objects run through `ChatInvoker`, and a validation chain checks a message before it leaves the browser
-- **`useChatFacade`** — the one hook components talk to; it combines the stores, the socket subscription and history loading, keeping transport details out of the UI
-- **Security** — bcrypt password hashing, server-side sanitising of message text (all HTML stripped), whitelist request validation, rate limiting (stricter on login and registration), Helmet headers, CORS restricted to the frontend origin
-- **Tests & CI/CD** — Jest and Supertest on the backend, Vitest and React Testing Library on the frontend; GitHub Actions lints, builds and runs both suites (plus backend e2e) on every push and pull request. A second workflow runs an automated review on each pull request
+**Rooms and people**
+- Public rooms and private rooms joined by invite link or by username
+- Room list sorted by activity with last-message previews, unread badges and a counter in the browser tab
+- Online status and "last seen", member lists, owner can delete a room and members see it disappear live
+- Profiles with display name, bio, avatar upload and password change
+
+**Product polish**
+- Dark, light and system themes with no flash on load
+- English, Ukrainian, Polish and Japanese, with correct plural forms
+- Works on phones; keyboard accessible dialogs; onboarding tour
+- One-click demo login backed by a seed script
+
+## Key decisions
+
+- **One set of business rules.** The Socket.IO gateway and the REST API call the same services, so access checks, sanitising and membership behave the same way on both paths. Image uploads go over HTTP and are then pushed to the room exactly like text messages.
+- **Realtime without module cycles.** A global `RealtimeService` lets any module notify users through a personal `user:<id>` channel. That is how unread badges update for rooms that are not open, and how members learn that a room was deleted.
+- **Presence that survives several tabs.** Sockets are counted per user, so closing one tab does not mark you offline; "last seen" is stored on the last disconnect.
+- **Uploads are re-encoded, never trusted.** Every image is decoded and re-encoded to WebP with sharp, which strips metadata and rejects files that only pretend to be images. Storage is behind an interface with local-disk and S3 drivers, so the same code runs on a laptop and on hosts whose disk is wiped on deploy.
+- **Correct ordering under load.** Messages sent in the same millisecond used to come back in random order; an insertion sequence now breaks ties everywhere messages are sorted.
+- **Security basics everywhere.** bcrypt, JWT on both REST and WebSocket, whitelist validation including WebSocket payloads, HTML stripped from messages, rate limits that see real client IPs behind proxies, Helmet, CORS limited to the frontend.
+- **Tested at three levels.** Unit tests for services, the gateway and React components (about 150 in total), an API e2e suite, and Playwright tests where two real browsers chat with each other. All of them run in CI.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI["React + Zustand<br/>Vite"] -->|REST /v1| API["NestJS<br/>auth · rooms · messages"]
+    UI["React + Zustand<br/>Vite"] -->|REST /v1| API["NestJS controllers<br/>auth · users · rooms · messages"]
     UI <-->|Socket.IO| GW["ChatGateway<br/>JWT handshake"]
     API --> SVC["Services"]
     GW --> SVC
+    SVC --> RT["RealtimeService<br/>presence · user channels"]
+    RT -.->|events| UI
     SVC --> REPO["Repositories<br/>(+ 30 s cache for public rooms)"]
+    SVC --> IMG["ImageStorageService<br/>sharp → WebP"]
+    IMG --> FS[("Local disk or S3 / R2")]
     REPO --> ORM["Prisma"]
     ORM --> DB[("PostgreSQL")]
 ```
 
-Data model: `User` (with optional display name, bio and avatar), `Room` (public or private, with an invite token), `RoomMember` and `Message`. Deleting a room or a user cascades to memberships and messages.
+Data model: `User` (display name, bio, avatar, last seen), `Room` (public or private, with an invite token), `RoomMember` (with the last-read time behind unread counters), `Message` (optional reply, edit time and image) and `Reaction`. Deleting a room or a user cascades to memberships, messages and reactions; the backend also removes the image files.
 
 ## API
 
@@ -86,10 +118,10 @@ WebSocket events:
 
 | Layer | Technology |
 |---|---|
-| Backend | NestJS 11, Socket.IO, Prisma 7, PostgreSQL, Passport JWT, Helmet, Throttler |
+| Backend | NestJS 11, Socket.IO, Prisma 7, PostgreSQL, Passport JWT, sharp, AWS SDK (S3/R2), Helmet, Throttler |
 | Frontend | React 19, Vite, TypeScript, Zustand, Tailwind CSS, React Router 7, react-i18next |
-| Tests | Jest + Supertest (backend), Vitest + React Testing Library (frontend) |
-| CI | GitHub Actions |
+| Tests | Jest + Supertest (backend), Vitest + React Testing Library (frontend), Playwright (browser) |
+| Delivery | GitHub Actions, Docker Compose, nginx, Render + Neon + Cloudflare R2 |
 
 ## Run with Docker
 
@@ -163,21 +195,30 @@ npm test        # with the backend and frontend dev servers running
 ```text
 backend/src/
   auth/         registration, login, JWT strategy and guards
-  rooms/        rooms, membership, invites, cached repository
-  messages/     message history and sending
+  users/        profiles, avatars, password change
+  rooms/        rooms, membership, invites, unread state, cached repository
+  messages/     history, image messages, replies, edits, reactions
   chat/         Socket.IO gateway and event names
-  prisma/       Prisma service
+  realtime/     presence and per-user event channels
+  storage/      image processing and local / S3 storage drivers
+  seed/         demo data
+  health/       health check for Docker and hosting
 frontend/src/
   api/          REST client and services
   websockets/   connection manager, commands, validation chain
-  store/        Zustand stores: auth, chat, rooms, UI
-  hooks/        useChatFacade, useChatSocket, useChatHistory
-  features/     chat screens and components
+  store/        Zustand stores: auth, chat, rooms, presence, UI
+  hooks/        socket connection, chat facade, history, theme
+  features/     chat, profile, presence and sign-in screens
+  components/   UI kit: avatar, bubbles, dialogs, icons
   locales/      en, uk, pl, ja
-.github/workflows/  lint + build + tests, automated PR review
+e2e/            Playwright tests and the screenshot / GIF capture script
+docs/           deployment guide, screenshots, demo GIF
+.github/workflows/  lint + build + unit + browser tests, automated PR review
 ```
 
 ## Configuration
+
+The essentials are below; `backend/.env.example`, `frontend/.env.example` and [docs/DEPLOY.md](docs/DEPLOY.md) list every option.
 
 | Variable | Where | Description |
 |---|---|---|
@@ -185,8 +226,13 @@ frontend/src/
 | `DATABASE_URL` | backend | PostgreSQL connection string |
 | `JWT_SECRET` | backend | Secret for signing tokens |
 | `FRONTEND_URL` | backend | Allowed CORS origin |
-| `VITE_API_URL` | frontend | Backend URL for REST (dev proxy target) |
-| `VITE_WS_URL` | frontend | Backend URL for Socket.IO (dev proxy target) |
+| `STORAGE_DRIVER` | backend | `local` (default) or `s3` for S3 / Cloudflare R2 |
+| `TRUST_PROXY` | backend | Number of proxies in front, for correct rate limiting |
+| `VITE_API_URL` | frontend | Backend URL; empty means same origin (Docker image) |
+| `VITE_WS_URL` | frontend | Socket.IO URL; defaults to `VITE_API_URL` |
+| `VITE_DEMO_ACCOUNTS`, `VITE_DEMO_PASSWORD` | frontend | Enable the one-click demo login |
+
+Regenerate the screenshots and GIF after UI changes with `cd e2e && npm run capture` (demo data and both dev servers required).
 
 ## Contact
 

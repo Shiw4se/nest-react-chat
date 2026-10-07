@@ -5,12 +5,14 @@
   "scripts": {
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "capture": "node scripts/capture.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
-    "pg": "^8.23.1"
+    "pg": "^8.23.1",
+    "sharp": "^0.35.5"
   }
 }
