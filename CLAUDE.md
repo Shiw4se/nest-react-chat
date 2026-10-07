@@ -52,9 +52,19 @@ npm run test -- src/store/useAuthStore.test.ts
 
 `docker compose up --build` runs Postgres, the API (`backend/Dockerfile`: migrations + optional `SEED_DEMO` seed in `docker-entrypoint.sh`, healthcheck on `/v1/health`) and the SPA in nginx (`frontend/nginx.conf.template` proxies `/v1`, `/socket.io`, `/uploads`, `/docs`; the frontend is built with empty `VITE_API_URL` = same origin). `render.yaml` + `docs/DEPLOY.md` describe the free Render + Neon + R2 setup. `.gitattributes` keeps `*.sh`/Dockerfiles LF so they run in Linux containers when checked out on Windows.
 
+### Browser tests (`/e2e`)
+
+```bash
+cd e2e
+npm ci && npx playwright install chromium   # once
+npm test                                    # reuses running backend (:3000) and Vite (:5173)
+```
+
+Playwright drives two signed-in browsers (users created via the API in `global-setup.ts`, sessions injected through the persisted zustand stores, tour marked as seen) and checks live messages, typing, replies, edits, reactions, deletion, unread badges, photos, presence and theme switching. `global-teardown.ts` deletes the run's users. Auth routes are throttled (`AUTH_THROTTLE_LIMIT`, default 5/min, resolved per request); CI sets it high.
+
 ### CI
 
-GitHub Actions runs on push to `main` and PRs. For each package: install, `prisma generate` (backend), lint, build, unit tests, plus `test:e2e` on the backend. The e2e suite boots the app with `PrismaService` mocked, so it needs no database.
+GitHub Actions runs on push to `main` and PRs. Job `test`: for each package install, `prisma generate` (backend), lint, build, unit tests, plus backend `test:e2e` (boots the app with `PrismaService` mocked, no database). Job `browser`: Postgres service, migrations, then the Playwright suite (its config starts the API and Vite); the report is uploaded on failure.
 
 ## Architecture
 

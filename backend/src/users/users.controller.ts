@@ -14,6 +14,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Throttle } from '@nestjs/throttler';
+import { authThrottleLimit } from '../common/throttle';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -49,7 +50,7 @@ export class UsersController {
   }
 
   @Patch('me/password')
-  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @Throttle({ default: { ttl: 60_000, limit: authThrottleLimit } })
   @ApiOperation({ summary: 'Change password (requires the current one)' })
   changePassword(
     @Request() req: RequestWithUser,

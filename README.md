@@ -150,6 +150,14 @@ cd backend && npm run test:e2e  # end-to-end tests
 cd frontend && npm test         # chat store and UI components
 ```
 
+Browser tests (Playwright, two real users chatting):
+
+```bash
+cd e2e
+npm ci && npx playwright install chromium
+npm test        # with the backend and frontend dev servers running
+```
+
 ## Project structure
 
 ```text
