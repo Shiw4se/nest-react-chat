@@ -18,7 +18,7 @@
     "room_public": "公開",
     "room_private": "非公開",
     "members": "メンバー",
-    "create_join_room": "+ 作成 / 参加",
+    "create_join_room": "作成 / 参加",
     "server_error": "サーバーでエラーが発生しました",
     "today": "今日",
     "yesterday": "昨日",
