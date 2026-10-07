@@ -105,7 +105,7 @@ GitHub Actions runs on push to `main` and PRs. For each package: install, `prism
 
 **Chat UI (Telegram-style):** `ChatHeader` shows the room avatar, name and a live subtitle (members / typing / connection); clicking it or the ⋮ menu opens `RoomInfoPanel` (members list, invite for private-room owners, leave or delete with `ConfirmDialog`). Logout and the language switcher live in the `Sidebar` user bar. Messages are grouped and given day separators by `utils/messageRows.ts`. Shared primitives: `Avatar` (deterministic gradient from `utils/avatar.ts`), `Icon` (inline SVG set), `Button` variants `primary | secondary | danger | text | icon`.
 
-**i18n:** `react-i18next` with translations in `/src/i18n/`.
+**i18n:** `react-i18next`, config in `src/config/i18n.ts`, translations in `src/locales/` keyed by real BCP 47 codes (`en`, `uk`, `pl`, `ja`) so Intl dates and plural rules (`_one/_few/_many/_other`) work; the switcher shows country-style labels (UA, JP). The chosen language is cached in localStorage.
 
 **Dev proxy:** Vite proxies `/auth` and `/socket.io` to the backend, so the frontend uses relative URLs in development.
 

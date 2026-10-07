@@ -149,7 +149,7 @@ frontend/src/
   store/        Zustand stores: auth, chat, rooms, UI
   hooks/        useChatFacade, useChatSocket, useChatHistory
   features/     chat screens and components
-  locales/      en, ua, pl, jp
+  locales/      en, uk, pl, ja
 .github/workflows/  lint + build + tests, automated PR review
 ```
 

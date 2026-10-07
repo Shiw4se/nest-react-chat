@@ -1,10 +1,10 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { SUPPORTED_LANGUAGES } from '../../../constants/languages';
+import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES } from '../../../constants/languages';
 
 export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { t, i18n } = useTranslation();
-  const current = SUPPORTED_LANGUAGES.find((l) => i18n.language.startsWith(l)) ?? 'en';
+  const current = SUPPORTED_LANGUAGES.find((l) => (i18n.resolvedLanguage ?? i18n.language).startsWith(l)) ?? 'en';
 
   return (
     <label className={`relative inline-flex items-center ${className}`}>
@@ -16,7 +16,7 @@ export const LanguageSwitcher: React.FC<{ className?: string }> = ({ className =
       >
         {SUPPORTED_LANGUAGES.map((lang) => (
           <option key={lang} value={lang}>
-            {lang}
+            {LANGUAGE_LABELS[lang] ?? lang}
           </option>
         ))}
       </select>
