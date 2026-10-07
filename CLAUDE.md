@@ -20,7 +20,11 @@ npm run test:e2e        # End-to-end tests
 npm run lint            # ESLint check
 npx prisma generate     # Regenerate Prisma client after schema changes
 npx prisma migrate dev  # Run migrations in development
+npm run db:start        # Local PostgreSQL (embedded binaries, data in backend/.pgdata)
+npm run db:stop         # Stop it; db:reset wipes the data directory
 ```
+
+The local database comes from the `embedded-postgres` dev dependency via `scripts/local-db.mjs`; it listens on 127.0.0.1:5432 as postgres/postgres, database `chat`. On Windows, start it from a normal terminal: when postgres is spawned from a sandboxed shell its child processes fail with "could not reserve shared memory region" (error 487).
 
 Run a single test file:
 ```bash
@@ -45,40 +49,46 @@ npm run test -- src/store/useAuthStore.test.ts
 
 ### CI
 
-GitHub Actions runs on push to `main` and PRs. Steps: install, `prisma generate`, then `npm test` for both backend and frontend.
+GitHub Actions runs on push to `main` and PRs. For each package: install, `prisma generate` (backend), lint, build, unit tests, plus `test:e2e` on the backend. The e2e suite boots the app with `PrismaService` mocked, so it needs no database.
 
 ## Architecture
 
 ### Backend (NestJS)
 
-**Module structure:** `AppModule` imports `AuthModule`, `ChatModule`, `MessagesModule`, `RoomsModule`, `PrismaModule`.
+**Module structure:** `AppModule` imports `AuthModule`, `ChatModule`, `MessagesModule`, `RoomsModule`, `UsersModule`, `PrismaModule`. `UsersModule` reuses `UserRepository` exported from `AuthModule`.
 
 **Data flow for REST:** Controller → Service → Repository → PrismaService
 
-**Data flow for WebSocket:** `ChatGateway` handles all real-time events. It depends on `RoomsService`, `MessagesService`, and validates connections via `WsJwtGuard`.
+**Data flow for WebSocket:** `ChatGateway` handles all real-time events. It depends on `RoomsService` and `MessagesService`, verifies the JWT itself in `handleConnection`, and carries its own `@UsePipes(ValidationPipe)` because global pipes from `main.ts` do not apply to gateways. Validation failures reach the client as an `exception` event.
 
 **Key patterns:**
 - **Repository pattern**: `RoomsRepository`, `MessagesRepository`, `UserRepository` abstract Prisma queries. Injected by token (`ROOMS_REPOSITORY`) so they can be swapped.
 - **Cached repository**: `CachedRoomsRepository` wraps `RoomsRepository` with in-memory cache (30s TTL for public rooms). Provided as `ROOMS_REPOSITORY` token in `RoomsModule`.
-- **Guards**: `JwtAuthGuard` (REST), `WsJwtGuard` (WebSocket). JWT tokens for WebSocket come from socket handshake headers or `auth` payload.
+- **Guards**: `JwtAuthGuard` (REST), `RoomAccessGuard` (REST room membership, read-only check). JWT tokens for WebSocket come from the socket handshake `auth` payload or `Authorization` header and are verified in `ChatGateway.handleConnection`.
+- **Room access**: `RoomsService.checkRoomAccess` is a read-only check; `RoomsService.joinRoom` additionally records membership for public rooms and is what the socket `join` handler uses.
+- **Profiles**: `User.displayName` and `User.bio` are optional. `/users/me` (GET, PATCH), `/users/me/password`, `/users/:userId`. Message authors and room members include `displayName`. A wrong current password returns 400, never 401, because the frontend logs out on any 401.
+- **Avatars**: `POST /users/me/avatar` (multipart field `avatar`, multer memory storage, 5 MB limit) goes through `AvatarStorageService`, which re-encodes with sharp to a 256×256 WebP. Re-encoding is also the real content check: anything sharp cannot decode is a 400. Files land in `UPLOADS_DIR` (default `backend/uploads`, git-ignored) under a fresh random name per upload, and the previous file is deleted. `main.ts` serves `/uploads/` as immutable static files with `Cross-Origin-Resource-Policy: cross-origin`, because Helmet's default would stop the Vite origin from displaying them. The DB stores a relative path; the frontend prefixes it with `VITE_API_URL` via `utils/mediaUrl`.
+- **Room lifecycle**: `GET /rooms/:roomId` returns details plus members (invite token stripped); `POST /rooms/:roomId/leave` for members, `DELETE /rooms/:roomId` for the owner (owners cannot leave, they delete). Membership and deletion writes invalidate the public-rooms cache.
 
-**WebSocket events (gateway → client):** `newMessage`, `userTyping`, `userJoined`, `ERROR`
-**WebSocket events (client → gateway):** `join`, `SendMessage`, `typing`, `deleteMessage`
+**WebSocket events (gateway → client):** `newMessage`, `userTyping`, `userJoined`, `deleteMessage`, `ERROR` (domain errors), `exception` (validation errors)
+**WebSocket events (client → gateway):** `join`, `leave`, `sendMessage`, `typing`, `deleteMessage`
 
-**Global config:** `ValidationPipe` (transform + whitelist), URI-based API versioning (default v1), CORS from `FRONTEND_URL` env.
+**Global config:** `ValidationPipe` (transform + whitelist), URI-based API versioning (default v1), CORS from `FRONTEND_URL` env, global throttler (300 req/min, stricter `@Throttle` on login/register). Swagger UI is served at `/docs` unless `NODE_ENV=production`.
 
-**Database schema:** `User` → `RoomMember` ← `Room`, `Message` belongs to `User` and `Room` (cascade delete).
+**Database schema:** `User` → `RoomMember` ← `Room`, `Message` belongs to `User` and `Room` (cascade delete). `Message` is indexed on `(roomId, createdAt)` for history pagination.
+
+**Database connection:** `PrismaService` builds a `pg` pool from `DATABASE_URL` via `ConfigService`. TLS is controlled by the `sslmode` query parameter; certificate verification is not disabled in code.
 
 ### Frontend (React + Vite)
 
 **State management:** Zustand stores (no Redux):
-- `useAuthStore` — persisted to `localStorage`. Clears other stores on login/logout.
+- `useAuthStore` — persisted to `localStorage`. Clears other stores on login/logout. The axios response interceptor calls `clearAuth` on a 401 from any non-auth route (expired token).
 - `useChatStore` — runtime messages, typing users, connection status, pagination state.
 - `useRoomStore` — room lists and active room, syncs with backend via `RoomsApi`.
 - `useUIStore` — modal visibility and UI flags.
 
 **WebSocket layer** (`/src/websockets/`):
-- `WebSocketManager` — Singleton managing the single Socket.IO connection.
+- `WebSocketManager` — Singleton managing the single Socket.IO connection (`VITE_WS_URL`, falling back to `VITE_API_URL`). Use `connectWithToken` to attach the JWT; do not mutate `socket.auth` in components (React Compiler lint).
 - `ChatInvoker` — Executes `ICommand` objects and maintains history for undo.
 - `SendMessageCommand` / `DeleteMessageCommand` — Command pattern wrapping socket emits.
 - `MessageBuilder` — Fluent builder for message payloads.
@@ -86,10 +96,14 @@ GitHub Actions runs on push to `main` and PRs. Steps: install, `prisma generate`
 
 **`useChatFacade` hook** — the primary interface used by components. Composes `useAuthStore`, `useChatStore`, `useRoomStore`, `useChatSocket`, and `useChatHistory`. Components should use this instead of calling stores directly.
 
-**`useChatSocket`** — subscribes to socket events and dispatches to `useChatStore`.
+**`useChatSocket`** — subscribes to socket events and dispatches to `useChatStore`. Server `ERROR` and `exception` events are shown as toasts.
 **`useChatHistory`** — cursor-based message pagination (loads older messages on scroll).
 
 **Routing:** React Router v7. `App.tsx` renders `JoinForm` or `Dashboard` based on auth state.
+
+**Profiles (frontend):** `ProfilePanel` is mounted once in `Dashboard` and driven by `useUIStore.profileUserId` (`openProfile` / `closeProfile`, not persisted). It opens from the sidebar user bar, a message author, or a room member. Own profile is editable (`EditProfileForm`, `ChangePasswordForm`); show names through `utils/displayName.nameOf`, and pass the username as the `Avatar` `seed` so the colour survives renames.
+
+**Chat UI (Telegram-style):** `ChatHeader` shows the room avatar, name and a live subtitle (members / typing / connection); clicking it or the ⋮ menu opens `RoomInfoPanel` (members list, invite for private-room owners, leave or delete with `ConfirmDialog`). Logout and the language switcher live in the `Sidebar` user bar. Messages are grouped and given day separators by `utils/messageRows.ts`. Shared primitives: `Avatar` (deterministic gradient from `utils/avatar.ts`), `Icon` (inline SVG set), `Button` variants `primary | secondary | danger | text | icon`.
 
 **i18n:** `react-i18next` with translations in `/src/i18n/`.
 
@@ -100,9 +114,10 @@ GitHub Actions runs on push to `main` and PRs. Steps: install, `prisma generate`
 **Backend** (`.env`):
 ```
 PORT=
-DATABASE_URL=         # PostgreSQL (Neon recommended)
+DATABASE_URL=         # PostgreSQL (local via npm run db:start, or Neon)
 JWT_SECRET=
 FRONTEND_URL=         # For CORS
+UPLOADS_DIR=          # Optional, default ./uploads
 ```
 
 **Frontend** (`.env`):
