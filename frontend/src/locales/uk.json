@@ -23,7 +23,13 @@
     "today": "Сьогодні",
     "yesterday": "Вчора",
     "typing_one": "{{name}} друкує…",
-    "typing_many": "{{names}} друкують…"
+    "typing_many": "{{names}} друкують…",
+    "you": "Ви",
+    "no_messages_short": "Повідомлень ще немає",
+    "unread_count_one": "{{count}} непрочитане повідомлення",
+    "unread_count_few": "{{count}} непрочитані повідомлення",
+    "unread_count_many": "{{count}} непрочитаних повідомлень",
+    "unread_count_other": "{{count}} непрочитаних повідомлень"
   },
   "auth": {
     "create_account": "Створити акаунт",

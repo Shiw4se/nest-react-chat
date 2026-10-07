@@ -1,3 +1,11 @@
+export interface MessagePreview {
+  id: string;
+  message: string;
+  createdAt: string;
+  userId: string;
+  user: { username: string; displayName?: string | null };
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -5,6 +13,8 @@ export interface Room {
   ownerId?: string;
   inviteToken?: string;
   createdAt?: string;
+  lastMessage?: MessagePreview | null;
+  unreadCount?: number;
   _count?: {
     members: number;
   };

@@ -17,6 +17,8 @@ export const SOCKET_EVENTS = {
   // validation failures (Nest WsException payloads)
   ERROR: 'ERROR',
   PRESENCE: 'presence',
+  MARK_READ: 'markRead',
+  ROOM_ACTIVITY: 'roomActivity',
   PRESENCE_SNAPSHOT: 'presenceSnapshot',
   EXCEPTION: 'exception',
 } as const;

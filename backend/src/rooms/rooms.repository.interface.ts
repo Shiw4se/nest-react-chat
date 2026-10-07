@@ -25,6 +25,11 @@ export interface IRoomsRepository {
     roomId: string,
   ): ReturnType<RoomsRepository['findMember']>;
   findMembers(roomId: string): Promise<RoomMembers>;
+  findMemberIds(roomId: string): Promise<string[]>;
+  markRead(userId: string, roomId: string): Promise<void>;
+  findLastMessage(
+    roomId: string,
+  ): ReturnType<RoomsRepository['findLastMessage']>;
   addMember(
     userId: string,
     roomId: string,

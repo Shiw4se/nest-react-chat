@@ -23,7 +23,13 @@
     "today": "Dzisiaj",
     "yesterday": "Wczoraj",
     "typing_one": "{{name}} pisze…",
-    "typing_many": "{{names}} piszą…"
+    "typing_many": "{{names}} piszą…",
+    "you": "Ty",
+    "no_messages_short": "Brak wiadomości",
+    "unread_count_one": "{{count}} nieprzeczytana wiadomość",
+    "unread_count_few": "{{count}} nieprzeczytane wiadomości",
+    "unread_count_many": "{{count}} nieprzeczytanych wiadomości",
+    "unread_count_other": "{{count}} nieprzeczytanych wiadomości"
   },
   "auth": {
     "create_account": "Utwórz konto",

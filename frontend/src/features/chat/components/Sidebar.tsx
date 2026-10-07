@@ -10,6 +10,8 @@ import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { CreateRoomModal } from './CreateRoomModal';
+import { RoomListItem } from './RoomListItem';
+import { useNow } from '../../../hooks/useNow';
 
 export const Sidebar: React.FC = () => {
   const { t } = useTranslation();
@@ -27,6 +29,8 @@ export const Sidebar: React.FC = () => {
   const username = currentUser?.username;
   const openProfile = useUIStore((state) => state.openProfile);
   const isConnected = useChatStore((state) => state.isConnected);
+  const now = useNow(60_000);
+  const totalUnread = myRooms.reduce((sum, r) => sum + (r.unreadCount ?? 0), 0);
   const logout = useAuthStore((state) => state.clearAuth);
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
 
@@ -107,6 +111,11 @@ export const Sidebar: React.FC = () => {
                 }`}
               >
                 {tab === 'my' ? t('chat.my_chats') : t('chat.public')}
+                {tab === 'my' && totalUnread > 0 && (
+                  <span className="ml-1.5 inline-block min-w-5 px-1.5 rounded-full bg-blue-500 text-white text-[11px] font-bold leading-5 tabular-nums">
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -128,32 +137,17 @@ export const Sidebar: React.FC = () => {
               {view === 'my' ? t('chat.no_my_chats') : t('chat.no_public_rooms')}
             </div>
           ) : (
-            currentRooms.map((room) => {
-              const isActive = activeRoomId === room.id;
-              return (
-                <button
-                  key={room.id}
-                  onClick={() => setActiveRoom(room.id)}
-                  aria-current={isActive ? 'true' : 'false'}
-                  className={`w-full text-left px-2.5 py-2.5 rounded-xl flex items-center gap-3 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500/70 ${
-                    isActive ? 'bg-blue-600 text-white' : 'hover:bg-slate-700/60 text-slate-200'
-                  }`}
-                >
-                  <Avatar name={room.name} size="md" shape="rounded" />
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate text-[15px]">{room.name}</div>
-                    <div
-                      className={`text-xs flex items-center gap-1.5 mt-0.5 ${
-                        isActive ? 'text-blue-100/80' : 'text-slate-400'
-                      }`}
-                    >
-                      <Icon name={room.type === 'PUBLIC' ? 'globe' : 'lock'} size={12} />
-                      <span>{t('room.members_count', { count: room._count?.members ?? 0 })}</span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })
+            currentRooms.map((room) => (
+              <RoomListItem
+                key={room.id}
+                room={room}
+                isActive={activeRoomId === room.id}
+                variant={view === 'my' ? 'chat' : 'public'}
+                currentUserId={currentUser?.id}
+                now={now}
+                onSelect={() => setActiveRoom(room.id)}
+              />
+            ))
           )}
         </div>
 

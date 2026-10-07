@@ -22,6 +22,9 @@ describe('ChatGateway', () => {
 
   const mockRoomsService = {
     joinRoom: jest.fn(),
+    markRead: jest.fn(),
+    getMemberIds: jest.fn().mockResolvedValue(['user-123', 'user-456']),
+    getLastMessage: jest.fn(),
   };
 
   const mockServer = {
@@ -211,6 +214,49 @@ describe('ChatGateway', () => {
         ChatEvents.NEW_MESSAGE,
         mockSavedMessage,
       );
+    });
+  });
+
+  describe('unread tracking', () => {
+    it('marks the room read when joining', async () => {
+      mockRoomsService.joinRoom.mockResolvedValue(true);
+      mockAuthenticatedSocket.data = {};
+      await gateway.handleJoinRoom(
+        { roomId: 'room-123' },
+        mockAuthenticatedSocket,
+      );
+      expect(mockRoomsService.markRead).toHaveBeenCalledWith(
+        'user-123',
+        'room-123',
+      );
+    });
+
+    it('notifies every member about a new message', async () => {
+      const realtime = (gateway as any).realtime as RealtimeService;
+      const toUsers = jest.spyOn(realtime, 'toUsers').mockImplementation();
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
+      const saved = { id: 'm1', message: 'hi', roomId: 'room-123' };
+      mockMessagesService.createMessage.mockResolvedValue(saved);
+
+      await gateway.handleMessage(
+        { roomId: 'room-123', message: 'hi' } as any,
+        mockAuthenticatedSocket,
+      );
+
+      expect(toUsers).toHaveBeenCalledWith(
+        ['user-123', 'user-456'],
+        ChatEvents.ROOM_ACTIVITY,
+        { roomId: 'room-123', senderId: 'user-123', lastMessage: saved },
+      );
+    });
+
+    it('ignores markRead for a room the socket is not viewing', async () => {
+      mockAuthenticatedSocket.data = { roomId: 'other' };
+      await gateway.handleMarkRead(
+        { roomId: 'room-123' },
+        mockAuthenticatedSocket,
+      );
+      expect(mockRoomsService.markRead).not.toHaveBeenCalled();
     });
   });
 });

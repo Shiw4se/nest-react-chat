@@ -1,5 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { RoomType } from '@prisma/client';
+import { Prisma, RoomType } from '@prisma/client';
+
+/** Fields shown as the room's last-message preview */
+export const MESSAGE_PREVIEW_SELECT = {
+  id: true,
+  message: true,
+  createdAt: true,
+  userId: true,
+  user: { select: { username: true, displayName: true } },
+} satisfies Prisma.MessageSelect;
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -23,11 +32,68 @@ export class RoomsRepository {
     });
   }
 
+  /**
+   * The user's rooms with the last message and the unread count, most
+   * recently active first (Telegram order).
+   */
   async findMyRooms(userId: string) {
-    return this.prisma.room.findMany({
-      where: { members: { some: { userId } } },
-      include: { _count: { select: { members: true } } },
+    const [rooms, unread] = await Promise.all([
+      this.prisma.room.findMany({
+        where: { members: { some: { userId } } },
+        include: {
+          _count: { select: { members: true } },
+          messages: {
+            take: 1,
+            orderBy: { createdAt: 'desc' },
+            select: MESSAGE_PREVIEW_SELECT,
+          },
+        },
+      }),
+      // One grouped query instead of a count per room
+      this.prisma.$queryRaw<{ roomId: string; count: number }[]>`
+        SELECT m."roomId", COUNT(*)::int AS count
+        FROM "Message" m
+        JOIN "RoomMember" rm
+          ON rm."roomId" = m."roomId" AND rm."userId" = ${userId}
+        WHERE m."createdAt" > rm."lastReadAt" AND m."userId" <> ${userId}
+        GROUP BY m."roomId"
+      `,
+    ]);
+
+    const unreadByRoom = new Map(unread.map((u) => [u.roomId, u.count]));
+    return rooms
+      .map(({ messages, ...room }) => ({
+        ...room,
+        lastMessage: messages[0] ?? null,
+        unreadCount: unreadByRoom.get(room.id) ?? 0,
+      }))
+      .sort(
+        (a, b) =>
+          (b.lastMessage?.createdAt ?? b.createdAt).getTime() -
+          (a.lastMessage?.createdAt ?? a.createdAt).getTime(),
+      );
+  }
+
+  async findMemberIds(roomId: string): Promise<string[]> {
+    const members = await this.prisma.roomMember.findMany({
+      where: { roomId },
+      select: { userId: true },
+    });
+    return members.map((m) => m.userId);
+  }
+
+  async markRead(userId: string, roomId: string) {
+    await this.prisma.roomMember.updateMany({
+      where: { userId, roomId },
+      data: { lastReadAt: new Date() },
+    });
+  }
+
+  async findLastMessage(roomId: string) {
+    return this.prisma.message.findFirst({
+      where: { roomId },
       orderBy: { createdAt: 'desc' },
+      select: MESSAGE_PREVIEW_SELECT,
     });
   }
 

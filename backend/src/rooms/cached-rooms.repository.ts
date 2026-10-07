@@ -70,6 +70,18 @@ export class CachedRoomsRepository implements IRoomsRepository {
     return this.repository.findMembers(roomId);
   }
 
+  async findMemberIds(roomId: string) {
+    return this.repository.findMemberIds(roomId);
+  }
+
+  async markRead(userId: string, roomId: string) {
+    return this.repository.markRead(userId, roomId);
+  }
+
+  async findLastMessage(roomId: string) {
+    return this.repository.findLastMessage(roomId);
+  }
+
   async updateToken(roomId: string, inviteToken: string) {
     return this.repository.updateToken(roomId, inviteToken);
   }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Sidebar } from './chat/components/Sidebar';
 import { ChatRoom } from './ChatRoom';
 import { ProfilePanel } from './profile/ProfilePanel';
@@ -11,6 +11,13 @@ export const Dashboard: React.FC = () => {
   const activeRoomId = useRoomStore((state) => state.activeRoomId);
   const profileUserId = useUIStore((state) => state.profileUserId);
   const closeProfile = useUIStore((state) => state.closeProfile);
+  const totalUnread = useRoomStore((state) =>
+    state.myRooms.reduce((sum, r) => sum + (r.unreadCount ?? 0), 0),
+  );
+
+  useEffect(() => {
+    document.title = totalUnread > 0 ? `(${totalUnread}) Chat` : 'Chat';
+  }, [totalUnread]);
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-slate-900">

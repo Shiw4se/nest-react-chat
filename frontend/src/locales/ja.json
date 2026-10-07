@@ -23,7 +23,10 @@
     "today": "今日",
     "yesterday": "昨日",
     "typing_one": "{{name}} が入力中…",
-    "typing_many": "{{names}} が入力中…"
+    "typing_many": "{{names}} が入力中…",
+    "you": "あなた",
+    "no_messages_short": "メッセージはまだありません",
+    "unread_count_other": "未読メッセージ {{count}} 件"
   },
   "auth": {
     "create_account": "アカウント作成",

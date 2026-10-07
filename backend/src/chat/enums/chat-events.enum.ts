@@ -9,5 +9,7 @@ export enum ChatEvents {
   DELETE_MESSAGE = 'deleteMessage',
   ERROR = 'ERROR',
   PRESENCE = 'presence',
+  MARK_READ = 'markRead',
+  ROOM_ACTIVITY = 'roomActivity',
   PRESENCE_SNAPSHOT = 'presenceSnapshot',
 }

@@ -23,7 +23,11 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "typing_one": "{{name}} is typing…",
-    "typing_many": "{{names}} are typing…"
+    "typing_many": "{{names}} are typing…",
+    "you": "You",
+    "no_messages_short": "No messages yet",
+    "unread_count_one": "{{count}} unread message",
+    "unread_count_other": "{{count}} unread messages"
   },
   "auth": {
     "create_account": "Create Account",

@@ -156,6 +156,8 @@ export class ChatGateway
 
     await client.join(data.roomId);
     client.data.roomId = data.roomId;
+    // Opening a room reads it
+    await this.roomsService.markRead(userId, data.roomId);
     this.logger.log(`${username} joined room ${data.roomId}`);
 
     client.to(data.roomId).emit(ChatEvents.USER_JOINED, {
@@ -168,6 +170,30 @@ export class ChatGateway
     @ConnectedSocket() client: AuthenticatedSocket,
   ): Promise<void> {
     await this.leaveActiveRoom(client);
+  }
+
+  /** Sent by a client that is looking at the room when new messages arrive. */
+  @SubscribeMessage(ChatEvents.MARK_READ)
+  async handleMarkRead(
+    @MessageBody() data: JoinRoomDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<void> {
+    if (client.data.roomId !== data.roomId) return;
+    await this.roomsService.markRead(client.user.id, data.roomId);
+  }
+
+  /** Tells every member (in any room or tab) what changed, for unread badges and previews. */
+  private async notifyRoomActivity(
+    roomId: string,
+    senderId: string | null,
+    lastMessage: unknown,
+  ) {
+    const memberIds = await this.roomsService.getMemberIds(roomId);
+    this.realtime.toUsers(memberIds, ChatEvents.ROOM_ACTIVITY, {
+      roomId,
+      senderId,
+      lastMessage,
+    });
   }
 
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
@@ -192,6 +218,7 @@ export class ChatGateway
       );
 
       this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
+      await this.notifyRoomActivity(data.roomId, userId, savedMessage);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -233,6 +260,9 @@ export class ChatGateway
       this.server
         .to(data.roomId)
         .emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
+      // The deleted message may have been the preview; senderId null = no unread bump
+      const lastMessage = await this.roomsService.getLastMessage(data.roomId);
+      await this.notifyRoomActivity(data.roomId, null, lastMessage);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to delete message';

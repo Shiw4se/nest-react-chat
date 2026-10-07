@@ -2,8 +2,15 @@ import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import { RoomsApi } from '../api/services/roomsApi';
 import { getApiErrorMessage } from '../api/axios';
-import type { Room } from '../types/room';
+import type { MessagePreview, Room } from '../types/room';
 import i18n from '../config/i18n';
+
+const activityTime = (room: Room) =>
+  new Date(room.lastMessage?.createdAt ?? room.createdAt ?? 0).getTime();
+
+/** Most recently active first, like Telegram */
+export const sortByActivity = (rooms: Room[]) =>
+  [...rooms].sort((a, b) => activityTime(b) - activityTime(a));
 
 interface RoomState {
   myRooms: Room[];
@@ -16,6 +23,9 @@ interface RoomState {
   createAndJoinRoom: (name: string, type: 'PUBLIC' | 'PRIVATE') => Promise<void>;
   leaveRoom: (roomId: string) => Promise<boolean>;
   deleteRoom: (roomId: string) => Promise<boolean>;
+  /** Live update from the server: new preview, optional unread bump, re-sort */
+  applyActivity: (roomId: string, lastMessage: MessagePreview | null, countsAsUnread: boolean) => void;
+  clearUnread: (roomId: string) => void;
   clearRooms: () => void;
 }
 
@@ -98,6 +108,33 @@ export const useRoomStore = create<RoomState>((set, get) => ({
       return false;
     }
   },
+
+  applyActivity: (roomId, lastMessage, countsAsUnread) => {
+    const { myRooms } = get();
+    if (!myRooms.some((r) => r.id === roomId)) {
+      // A room we did not know about (e.g. we were just invited): reload the list
+      void get().fetchMyRooms();
+      return;
+    }
+    set({
+      myRooms: sortByActivity(
+        myRooms.map((r) =>
+          r.id === roomId
+            ? {
+                ...r,
+                lastMessage,
+                unreadCount: (r.unreadCount ?? 0) + (countsAsUnread ? 1 : 0),
+              }
+            : r,
+        ),
+      ),
+    });
+  },
+
+  clearUnread: (roomId) =>
+    set((state) => ({
+      myRooms: state.myRooms.map((r) => (r.id === roomId ? { ...r, unreadCount: 0 } : r)),
+    })),
 
   clearRooms: () => set({ myRooms: [], publicRooms: [], activeRoomId: null }),
 }));

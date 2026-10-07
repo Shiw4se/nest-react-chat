@@ -142,6 +142,18 @@ export class RoomsService {
     return { message: 'Room deleted' };
   }
 
+  getMemberIds(roomId: string) {
+    return this.roomsRepository.findMemberIds(roomId);
+  }
+
+  markRead(userId: string, roomId: string) {
+    return this.roomsRepository.markRead(userId, roomId);
+  }
+
+  getLastMessage(roomId: string) {
+    return this.roomsRepository.findLastMessage(roomId);
+  }
+
   /** Read-only access check: public rooms are open to everyone, private ones to members. */
   async checkRoomAccess(userId: string, roomId: string): Promise<boolean> {
     const room = await this.roomsRepository.findById(roomId);

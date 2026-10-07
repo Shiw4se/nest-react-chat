@@ -4,8 +4,17 @@ import { SOCKET_EVENTS } from '../constants/socketEvents';
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
 import { usePresenceStore } from '../store/usePresenceStore';
+import { useRoomStore } from '../store/useRoomStore';
+import type { MessagePreview } from '../types/room';
 import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import i18n from '../config/i18n';
+
+interface RoomActivityEvent {
+  roomId: string;
+  /** null for edits/deletions that only refresh the preview */
+  senderId: string | null;
+  lastMessage: MessagePreview | null;
+}
 
 interface PresenceEvent {
   userId: string;
@@ -49,7 +58,18 @@ export const useSocketConnection = () => {
     const onPresence = ({ userId: id, online, lastSeenAt }: PresenceEvent) =>
       presence.setPresence(id, online, lastSeenAt);
 
+    const onRoomActivity = ({ roomId, senderId, lastMessage }: RoomActivityEvent) => {
+      const rooms = useRoomStore.getState();
+      const isOwn = senderId === userId;
+      const isViewing = rooms.activeRoomId === roomId && document.visibilityState === 'visible';
+      const isNewFromOthers = !!senderId && !isOwn;
+
+      if (isNewFromOthers && isViewing) socket.emit(SOCKET_EVENTS.MARK_READ, { roomId });
+      rooms.applyActivity(roomId, lastMessage, isNewFromOthers && !isViewing);
+    };
+
     socket.on(SOCKET_EVENTS.CONNECT, onConnect);
+    socket.on(SOCKET_EVENTS.ROOM_ACTIVITY, onRoomActivity);
     socket.on(SOCKET_EVENTS.DISCONNECT, onDisconnect);
     socket.on(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
     socket.on(SOCKET_EVENTS.ERROR, onServerError);
@@ -62,6 +82,7 @@ export const useSocketConnection = () => {
 
     return () => {
       socket.off(SOCKET_EVENTS.CONNECT, onConnect);
+      socket.off(SOCKET_EVENTS.ROOM_ACTIVITY, onRoomActivity);
       socket.off(SOCKET_EVENTS.DISCONNECT, onDisconnect);
       socket.off(SOCKET_EVENTS.CONNECT_ERROR, onConnectError);
       socket.off(SOCKET_EVENTS.ERROR, onServerError);

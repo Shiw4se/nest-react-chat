@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useChatStore } from '../store/useChatStore';
+import { useRoomStore } from '../store/useRoomStore';
 import { SOCKET_EVENTS } from '../constants/socketEvents';
 import type { UserData } from '../types/auth';
 import type { ChatMessage } from '../types/chat';
@@ -27,9 +28,18 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
       return;
     }
 
-    // Join now if connected, and again after every reconnect
+    // Join now if connected, and again after every reconnect (the server marks it read)
     const join = () => socket.emit(SOCKET_EVENTS.JOIN, { roomId });
     if (socket.connected) join();
+    useRoomStore.getState().clearUnread(roomId);
+
+    // Messages that arrived while the tab was hidden count as unread until it is shown again
+    const handleVisibility = () => {
+      if (document.visibilityState !== 'visible') return;
+      socket.emit(SOCKET_EVENTS.MARK_READ, { roomId });
+      useRoomStore.getState().clearUnread(roomId);
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     const handleNewMessage = (message: ChatMessage) => {
       if (message.roomId === roomId) addMessage(message);
@@ -47,6 +57,7 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     socket.on(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
 
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
       socket.off(SOCKET_EVENTS.CONNECT, join);
       socket.off(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
