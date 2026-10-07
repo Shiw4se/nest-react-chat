@@ -7,16 +7,13 @@ import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../auth/user.repository';
 import { PresenceService } from '../realtime/presence.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import {
-  AVATAR_MIME_TYPES,
-  AvatarStorageService,
-} from './avatar-storage.service';
+import { ImageStorageService } from '../storage/image-storage.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly userRepository: UserRepository,
-    private readonly avatarStorage: AvatarStorageService,
+    private readonly images: ImageStorageService,
     private readonly presence: PresenceService,
   ) {}
 
@@ -44,20 +41,19 @@ export class UsersService {
 
   async uploadAvatar(userId: string, file: Express.Multer.File | undefined) {
     if (!file) throw new BadRequestException('No file uploaded');
-    if (!AVATAR_MIME_TYPES.includes(file.mimetype))
-      throw new BadRequestException('Only JPEG, PNG, WebP or GIF images');
+    this.images.assertImageType(file.mimetype);
 
     const previous = await this.userRepository.findAvatarUrl(userId);
-    const url = await this.avatarStorage.save(userId, file.buffer);
+    const url = await this.images.saveAvatar(userId, file.buffer);
     const updated = await this.userRepository.updateAvatar(userId, url);
-    await this.avatarStorage.remove(previous);
+    await this.images.remove(previous);
     return updated;
   }
 
   async removeAvatar(userId: string) {
     const previous = await this.userRepository.findAvatarUrl(userId);
     const updated = await this.userRepository.updateAvatar(userId, null);
-    await this.avatarStorage.remove(previous);
+    await this.images.remove(previous);
     return updated;
   }
 

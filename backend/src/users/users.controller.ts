@@ -21,7 +21,7 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { AVATAR_MAX_BYTES } from './avatar-storage.service';
+import { AVATAR_MAX_BYTES } from '../storage/image-storage.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { RequestWithUser } from '../auth/interfaces/auth.interfaces';
 import { UsersService } from './users.service';

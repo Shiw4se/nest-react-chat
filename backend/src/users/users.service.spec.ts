@@ -4,7 +4,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { UserRepository } from '../auth/user.repository';
-import { AvatarStorageService } from './avatar-storage.service';
+import { ImageStorageService } from '../storage/image-storage.service';
 import { PresenceService } from '../realtime/presence.service';
 
 jest.mock('bcrypt');
@@ -22,8 +22,11 @@ describe('UsersService', () => {
   };
 
   const mockAvatarStorage = {
-    save: jest.fn(),
+    saveAvatar: jest.fn(),
     remove: jest.fn(),
+    assertImageType: jest.fn((type: string) => {
+      if (!type.startsWith('image/')) throw new BadRequestException('bad type');
+    }),
   };
 
   beforeEach(async () => {
@@ -32,7 +35,7 @@ describe('UsersService', () => {
       providers: [
         UsersService,
         { provide: UserRepository, useValue: mockUserRepository },
-        { provide: AvatarStorageService, useValue: mockAvatarStorage },
+        { provide: ImageStorageService, useValue: mockAvatarStorage },
         PresenceService,
       ],
     }).compile();
@@ -131,14 +134,16 @@ describe('UsersService', () => {
       await expect(
         service.uploadAvatar('u1', file('application/pdf')),
       ).rejects.toThrow(BadRequestException);
-      expect(mockAvatarStorage.save).not.toHaveBeenCalled();
+      expect(mockAvatarStorage.saveAvatar).not.toHaveBeenCalled();
     });
 
     it('stores the new avatar and deletes the previous one', async () => {
       mockUserRepository.findAvatarUrl.mockResolvedValue(
         '/uploads/avatars/old.webp',
       );
-      mockAvatarStorage.save.mockResolvedValue('/uploads/avatars/new.webp');
+      mockAvatarStorage.saveAvatar.mockResolvedValue(
+        '/uploads/avatars/new.webp',
+      );
       mockUserRepository.updateAvatar.mockResolvedValue({ id: 'u1' });
 
       await service.uploadAvatar('u1', file('image/png'));

@@ -7,6 +7,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { resolveUploadsRoot, UPLOADS_URL_PREFIX } from './common/uploads';
+import { isS3Driver } from './storage/storage.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -23,18 +24,21 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  // Uploaded avatars. Names are random per upload, so they can be cached forever.
-  // Helmet's default Cross-Origin-Resource-Policy (same-origin) would block the
-  // frontend origin from showing them, so it is relaxed for this path only.
-  app.useStaticAssets(resolveUploadsRoot(configService.get('UPLOADS_DIR')), {
-    prefix: `${UPLOADS_URL_PREFIX}/`,
-    maxAge: '365d',
-    immutable: true,
-    index: false,
-    setHeaders: (res: ServerResponse) => {
-      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    },
-  });
+  // Local driver only: with S3 the files are served by the bucket/CDN
+  if (!isS3Driver(configService)) {
+    // Uploaded files. Names are random per upload, so they can be cached forever.
+    // Helmet's default Cross-Origin-Resource-Policy (same-origin) would block the
+    // frontend origin from showing them, so it is relaxed for this path only.
+    app.useStaticAssets(resolveUploadsRoot(configService.get('UPLOADS_DIR')), {
+      prefix: `${UPLOADS_URL_PREFIX}/`,
+      maxAge: '365d',
+      immutable: true,
+      index: false,
+      setHeaders: (res: ServerResponse) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      },
+    });
+  }
 
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL'),

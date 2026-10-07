@@ -67,7 +67,7 @@ GitHub Actions runs on push to `main` and PRs. For each package: install, `prism
 - **Guards**: `JwtAuthGuard` (REST), `RoomAccessGuard` (REST room membership, read-only check). JWT tokens for WebSocket come from the socket handshake `auth` payload or `Authorization` header and are verified in `ChatGateway.handleConnection`.
 - **Room access**: `RoomsService.checkRoomAccess` is a read-only check; `RoomsService.joinRoom` additionally records membership for public rooms and is what the socket `join` handler uses.
 - **Profiles**: `User.displayName` and `User.bio` are optional. `/users/me` (GET, PATCH), `/users/me/password`, `/users/:userId`. Message authors and room members include `displayName`. A wrong current password returns 400, never 401, because the frontend logs out on any 401.
-- **Avatars**: `POST /users/me/avatar` (multipart field `avatar`, multer memory storage, 5 MB limit) goes through `AvatarStorageService`, which re-encodes with sharp to a 256×256 WebP. Re-encoding is also the real content check: anything sharp cannot decode is a 400. Files land in `UPLOADS_DIR` (default `backend/uploads`, git-ignored) under a fresh random name per upload, and the previous file is deleted. `main.ts` serves `/uploads/` as immutable static files with `Cross-Origin-Resource-Policy: cross-origin`, because Helmet's default would stop the Vite origin from displaying them. The DB stores a relative path; the frontend prefixes it with `VITE_API_URL` via `utils/mediaUrl`.
+- **File storage** (`src/storage`, global): `ImageStorageService` re-encodes uploads with sharp (avatars: 256×256 WebP crop; chat images: longest side 1600, never upscaled) and hands them to the `FILE_STORAGE` driver. Re-encoding is the real content check: anything sharp cannot decode is a 400. `STORAGE_DRIVER=local` (default) writes to `UPLOADS_DIR` and `main.ts` serves `/uploads/` as immutable static files with `Cross-Origin-Resource-Policy: cross-origin` (Helmet's default would block the Vite origin); `STORAGE_DRIVER=s3` uses any S3-compatible bucket (`S3_*` vars, e.g. Cloudflare R2) and stores absolute URLs. Keys are `<folder>/<userId>-<random>.webp`; drivers only delete keys matching `SAFE_KEY`. The frontend resolves relative paths with `utils/mediaUrl`.
 - **Replies & edits**: `Message.replyToId` (self-relation, `onDelete: SetNull`) and `editedAt`. `MESSAGE_INCLUDE` in `messages.repository.ts` is the single shape sent to clients (author + quoted message); reuse it for anything that returns messages. Replies must quote a message from the same room. `editMessage` is author-only and re-sanitized; the gateway broadcasts `messageEdited` and refreshes the room preview if the edited message is the latest. Messages sort by `createdAt` then `seq`.
 - **Reactions**: `Reaction` rows keyed by (messageId, userId, emoji); only `ALLOWED_REACTIONS` (`messages/reactions.ts`, mirrored in the frontend `utils/reactions.ts`) pass validation. `toggleReaction` broadcasts the full raw list as `reactionsUpdated`; clients group with `groupReactions`.
 - **Unread & previews**: `RoomMember.lastReadAt`; `GET /rooms/my` adds `lastMessage` and `unreadCount` (one grouped raw SQL query) and sorts by last activity. Joining a room marks it read; clients viewing a room send `markRead`. Every new message (and deletion, with `senderId: null`) emits `roomActivity` to all members' personal channels, so badges update for rooms that are not open.
@@ -124,7 +124,9 @@ PORT=
 DATABASE_URL=         # PostgreSQL (local via npm run db:start, or Neon)
 JWT_SECRET=
 FRONTEND_URL=         # For CORS
-UPLOADS_DIR=          # Optional, default ./uploads
+STORAGE_DRIVER=       # local (default) or s3
+UPLOADS_DIR=          # Optional, default ./uploads (local driver)
+S3_ENDPOINT= S3_REGION= S3_BUCKET= S3_ACCESS_KEY_ID= S3_SECRET_ACCESS_KEY= S3_PUBLIC_URL=  # s3 driver
 ```
 
 **Frontend** (`.env`):
