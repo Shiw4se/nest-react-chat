@@ -91,6 +91,14 @@ WebSocket events:
 | Tests | Jest + Supertest (backend), Vitest + React Testing Library (frontend) |
 | CI | GitHub Actions |
 
+## Run with Docker
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:8080 and press **Try the demo**. Postgres, the API and the SPA (behind nginx) start together; demo data is created automatically. Deploying a free public demo (Render + Neon + Cloudflare R2) is described in [docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Running locally
 
 Requirements: Node.js 20+. PostgreSQL is optional: the backend ships a local server that needs no installer or Docker.

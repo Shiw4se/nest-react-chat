@@ -48,6 +48,10 @@ Run a single test file:
 npm run test -- src/store/useAuthStore.test.ts
 ```
 
+### Docker & deployment
+
+`docker compose up --build` runs Postgres, the API (`backend/Dockerfile`: migrations + optional `SEED_DEMO` seed in `docker-entrypoint.sh`, healthcheck on `/v1/health`) and the SPA in nginx (`frontend/nginx.conf.template` proxies `/v1`, `/socket.io`, `/uploads`, `/docs`; the frontend is built with empty `VITE_API_URL` = same origin). `render.yaml` + `docs/DEPLOY.md` describe the free Render + Neon + R2 setup. `.gitattributes` keeps `*.sh`/Dockerfiles LF so they run in Linux containers when checked out on Windows.
+
 ### CI
 
 GitHub Actions runs on push to `main` and PRs. For each package: install, `prisma generate` (backend), lint, build, unit tests, plus `test:e2e` on the backend. The e2e suite boots the app with `PrismaService` mocked, so it needs no database.

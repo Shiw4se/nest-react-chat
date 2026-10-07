@@ -5,7 +5,8 @@ import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import i18n from '../config/i18n';
 
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/v1`,
+  // Empty VITE_API_URL = same origin (/v1), used by the Docker image
+  baseURL: `${import.meta.env.VITE_API_URL ?? ''}/v1`,
   headers: {
     'Cache-Control': 'no-cache',
     Pragma: 'no-cache',

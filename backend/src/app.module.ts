@@ -10,6 +10,7 @@ import { RoomsModule } from './rooms/rooms.module';
 import { UsersModule } from './users/users.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { StorageModule } from './storage/storage.module';
+import { HealthController } from './health/health.controller';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { StorageModule } from './storage/storage.module';
     RoomsModule,
     UsersModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

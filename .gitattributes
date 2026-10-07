@@ -1,0 +1,6 @@
+# Files executed or parsed inside Linux containers must keep LF endings,
+# even on Windows checkouts with core.autocrlf=true (a CRLF shebang fails).
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.template      text eol=lf
+docker-compose.yml text eol=lf

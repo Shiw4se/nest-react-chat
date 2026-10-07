@@ -24,6 +24,14 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  // Behind a reverse proxy (nginx in docker-compose, PaaS load balancers) the
+  // socket address is the proxy's; without this every user would share one
+  // throttling bucket. Set TRUST_PROXY to the number of proxies in front.
+  const trustProxy = configService.get<string>('TRUST_PROXY');
+  if (trustProxy) {
+    app.set('trust proxy', Number(trustProxy) || trustProxy);
+  }
+
   // Local driver only: with S3 the files are served by the bucket/CDN
   if (!isS3Driver(configService)) {
     // Uploaded files. Names are random per upload, so they can be cached forever.
