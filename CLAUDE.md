@@ -70,7 +70,9 @@ GitHub Actions runs on push to `main` and PRs. For each package: install, `prism
 - **Avatars**: `POST /users/me/avatar` (multipart field `avatar`, multer memory storage, 5 MB limit) goes through `AvatarStorageService`, which re-encodes with sharp to a 256×256 WebP. Re-encoding is also the real content check: anything sharp cannot decode is a 400. Files land in `UPLOADS_DIR` (default `backend/uploads`, git-ignored) under a fresh random name per upload, and the previous file is deleted. `main.ts` serves `/uploads/` as immutable static files with `Cross-Origin-Resource-Policy: cross-origin`, because Helmet's default would stop the Vite origin from displaying them. The DB stores a relative path; the frontend prefixes it with `VITE_API_URL` via `utils/mediaUrl`.
 - **Room lifecycle**: `GET /rooms/:roomId` returns details plus members (invite token stripped); `POST /rooms/:roomId/leave` for members, `DELETE /rooms/:roomId` for the owner (owners cannot leave, they delete). Membership and deletion writes invalidate the public-rooms cache.
 
-**WebSocket events (gateway → client):** `newMessage`, `userTyping`, `userJoined`, `deleteMessage`, `ERROR` (domain errors), `exception` (validation errors)
+**Realtime module (global):** `RealtimeService` lets any module emit to a user (`user:<id>` channel joined on connect), a room, or everyone, without importing the gateway (that would be a module cycle); the gateway attaches the server in `afterInit`. `PresenceService` counts sockets per user in memory (single instance only; multiple instances would need Redis + the Socket.IO Redis adapter). The gateway tracks the viewed room in `socket.data.roomId` so switching rooms never leaves the personal channel. On the last disconnect `User.lastSeenAt` is stored and `presence` is broadcast.
+
+**WebSocket events (gateway → client):** `newMessage`, `userTyping`, `userJoined`, `deleteMessage`, `presence` / `presenceSnapshot`, `ERROR` (domain errors), `exception` (validation errors)
 **WebSocket events (client → gateway):** `join`, `leave`, `sendMessage`, `typing`, `deleteMessage`
 
 **Global config:** `ValidationPipe` (transform + whitelist), URI-based API versioning (default v1), CORS from `FRONTEND_URL` env, global throttler (300 req/min, stricter `@Throttle` on login/register). Swagger UI is served at `/docs` unless `NODE_ENV=production`.
@@ -96,7 +98,8 @@ GitHub Actions runs on push to `main` and PRs. For each package: install, `prism
 
 **`useChatFacade` hook** — the primary interface used by components. Composes `useAuthStore`, `useChatStore`, `useRoomStore`, `useChatSocket`, and `useChatHistory`. Components should use this instead of calling stores directly.
 
-**`useChatSocket`** — subscribes to socket events and dispatches to `useChatStore`. Server `ERROR` and `exception` events are shown as toasts.
+**`useSocketConnection`** (mounted in `Dashboard`) owns the connection for the whole session: connect after login, connection status, error toasts, presence into `usePresenceStore`.
+**`useChatSocket`** — joins/leaves the viewed room (re-joins on reconnect) and handles its events. Read presence with `usePresence(userId, restFallback)` or `<PresenceLabel>`; zustand v5 selectors must return primitives or stable references, never fresh objects.
 **`useChatHistory`** — cursor-based message pagination (loads older messages on scroll).
 
 **Routing:** React Router v7. `App.tsx` renders `JoinForm` or `Dashboard` based on auth state.

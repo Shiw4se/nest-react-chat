@@ -8,4 +8,6 @@ export enum ChatEvents {
   USER_TYPING = 'userTyping',
   DELETE_MESSAGE = 'deleteMessage',
   ERROR = 'ERROR',
+  PRESENCE = 'presence',
+  PRESENCE_SNAPSHOT = 'presenceSnapshot',
 }

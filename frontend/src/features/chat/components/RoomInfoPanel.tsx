@@ -10,6 +10,9 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { useUIStore } from '../../../store/useUIStore';
 import { nameOf } from '../../../utils/displayName';
+import { usePresenceStore } from '../../../store/usePresenceStore';
+import { PresenceLabel } from '../../presence/PresenceLabel';
+import type { RoomMember } from '../../../types/room';
 import type { RoomDetails } from '../../../types/room';
 
 interface Props {
@@ -26,6 +29,8 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
   const leaveRoom = useRoomStore((s) => s.leaveRoom);
   const deleteRoom = useRoomStore((s) => s.deleteRoom);
   const openProfile = useUIStore((s) => s.openProfile);
+  const onlineMap = usePresenceStore((s) => s.online);
+  const hasSnapshot = usePresenceStore((s) => s.hasSnapshot);
 
   const [room, setRoom] = useState<RoomDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +63,12 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
   const isOwner = room?.ownerId === currentUserId;
   const isPrivate = room?.type === 'PRIVATE';
   const membersCount = room?.members.length ?? 0;
+  const isMemberOnline = (m: RoomMember) => (hasSnapshot ? !!onlineMap[m.id] : !!m.isOnline);
+  const onlineCount = room?.members.filter(isMemberOnline).length ?? 0;
+  // Telegram order: online people first, then by join date (API order)
+  const members = room
+    ? [...room.members].sort((a, b) => Number(isMemberOnline(b)) - Number(isMemberOnline(a)))
+    : [];
 
   const handleConfirm = async () => {
     if (!confirm) return;
@@ -107,6 +118,12 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
                   <Icon name={isPrivate ? 'lock' : 'globe'} size={14} />
                   {isPrivate ? t('chat.room_private') : t('chat.room_public')} ·{' '}
                   {t('room.members_count', { count: membersCount })}
+                  {onlineCount > 0 && (
+                    <span className="text-sky-400">
+                      {' · '}
+                      {t('presence.online_count', { count: onlineCount })}
+                    </span>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
                   {t('room.created')}{' '}
@@ -136,34 +153,14 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
                   {t('room.members')} · {membersCount}
                 </h4>
                 <ul className="pb-4">
-                  {room.members.map((m) => (
+                  {members.map((m) => (
                     <li key={m.id}>
-                    <button
-                      type="button"
-                      onClick={() => openProfile(m.id)}
-                      className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-slate-700/40 focus:outline-none focus-visible:bg-slate-700/60"
-                    >
-                      <Avatar name={nameOf(m)} seed={m.username} src={m.avatarUrl} size="sm" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-100 truncate flex items-center gap-1.5">
-                          {nameOf(m)}
-                          {m.id === currentUserId && (
-                            <span className="text-[10px] font-normal text-slate-500">
-                              ({t('room.you')})
-                            </span>
-                          )}
-                        </p>
-                        {m.displayName && (
-                          <p className="text-xs text-slate-500 truncate">@{m.username}</p>
-                        )}
-                      </div>
-                      {m.isOwner && (
-                        <span className="flex items-center gap-1 text-[11px] text-amber-400">
-                          <Icon name="crown" size={13} />
-                          {t('room.owner')}
-                        </span>
-                      )}
-                    </button>
+                      <MemberRow
+                        member={m}
+                        isMe={m.id === currentUserId}
+                        isOnline={isMemberOnline(m)}
+                        onOpen={() => openProfile(m.id)}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -211,5 +208,41 @@ export const RoomInfoPanel: React.FC<Props> = ({ isOpen, roomId, onClose, onInvi
         onClose={() => setConfirm(null)}
       />
     </>
+  );
+};
+
+const MemberRow: React.FC<{
+  member: RoomMember;
+  isMe: boolean;
+  isOnline: boolean;
+  onOpen: () => void;
+}> = ({ member: m, isMe, isOnline, onOpen }) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="w-full flex items-center gap-3 px-5 py-2.5 text-left hover:bg-slate-700/40 focus:outline-none focus-visible:bg-slate-700/60"
+    >
+      <Avatar name={nameOf(m)} seed={m.username} src={m.avatarUrl} online={isOnline} size="sm" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-slate-100 truncate flex items-center gap-1.5">
+          {nameOf(m)}
+          {isMe && <span className="text-[10px] font-normal text-slate-500">({t('room.you')})</span>}
+        </p>
+        <PresenceLabel
+          userId={m.id}
+          isOnline={m.isOnline}
+          lastSeenAt={m.lastSeenAt}
+          className="block text-xs truncate"
+        />
+      </div>
+      {m.isOwner && (
+        <span className="flex items-center gap-1 text-[11px] text-amber-400">
+          <Icon name="crown" size={13} />
+          {t('room.owner')}
+        </span>
+      )}
+    </button>
   );
 };

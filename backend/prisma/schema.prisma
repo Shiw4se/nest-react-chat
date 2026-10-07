@@ -18,6 +18,7 @@ model User {
   displayName String?
   bio         String?
   avatarUrl   String?
+  lastSeenAt  DateTime?
   
   messages   Message[]
   rooms      RoomMember[] 

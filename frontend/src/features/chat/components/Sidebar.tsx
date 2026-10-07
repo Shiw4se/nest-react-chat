@@ -5,6 +5,7 @@ import { useAuthStore } from '../../../store/useAuthStore';
 import { useUIStore } from '../../../store/useUIStore';
 import { Avatar } from '../../../components/ui/Avatar';
 import { nameOf } from '../../../utils/displayName';
+import { useChatStore } from '../../../store/useChatStore';
 import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -25,6 +26,7 @@ export const Sidebar: React.FC = () => {
   const currentUser = useAuthStore((state) => state.user);
   const username = currentUser?.username;
   const openProfile = useUIStore((state) => state.openProfile);
+  const isConnected = useChatStore((state) => state.isConnected);
   const logout = useAuthStore((state) => state.clearAuth);
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
 
@@ -64,14 +66,17 @@ export const Sidebar: React.FC = () => {
                 name={nameOf(currentUser)}
                 seed={currentUser.username}
                 src={currentUser.avatarUrl}
+                online={isConnected}
                 size="sm"
               />
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-white truncate">
                   {nameOf(currentUser)}
                 </span>
-                <span className="block text-[11px] text-emerald-400">
-                  {t('chat.online', 'online')}
+                <span
+                  className={`block text-[11px] ${isConnected ? 'text-emerald-400' : 'text-amber-400'}`}
+                >
+                  {isConnected ? t('presence.online') : t('presence.connecting')}
                 </span>
               </span>
             </button>

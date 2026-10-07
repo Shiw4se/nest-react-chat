@@ -64,6 +64,7 @@ export class RoomsRepository {
             username: true,
             displayName: true,
             avatarUrl: true,
+            lastSeenAt: true,
           },
         },
       },

@@ -11,6 +11,7 @@ const profile: UserProfile = {
   displayName: null,
   bio: null,
   avatarUrl: null,
+  lastSeenAt: null,
   createdAt: '2026-01-01T00:00:00Z',
   stats: { rooms: 0, ownedRooms: 0, messages: 0 },
 };

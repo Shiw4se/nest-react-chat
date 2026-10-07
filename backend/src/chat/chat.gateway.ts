@@ -10,7 +10,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ChatEvents } from './enums/chat-events.enum';
@@ -20,6 +20,9 @@ import { JoinRoomDto } from './dto/join-room.dto';
 import { TypingDto } from './dto/typing.dto';
 import { DeleteMessageDto } from './dto/delete-message.dto';
 import { RoomsService } from '../rooms/rooms.service';
+import { UserRepository } from '../auth/user.repository';
+import { PresenceService } from '../realtime/presence.service';
+import { RealtimeService, userChannel } from '../realtime/realtime.service';
 import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 
 // CORS origin is set dynamically in afterInit() via ConfigService
@@ -42,6 +45,8 @@ import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
+  private readonly logger = new Logger(ChatGateway.name);
+
   @WebSocketServer()
   server: Server;
 
@@ -50,11 +55,15 @@ export class ChatGateway
     private readonly configService: ConfigService,
     private readonly messagesService: MessagesService,
     private readonly roomsService: RoomsService,
+    private readonly userRepository: UserRepository,
+    private readonly presence: PresenceService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   afterInit(server: Server) {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
     server.engine.opts.cors = { origin: frontendUrl, credentials: true };
+    this.realtime.attach(server);
   }
 
   async handleConnection(client: Socket) {
@@ -71,18 +80,60 @@ export class ChatGateway
         secret: this.configService.get<string>('JWT_SECRET'),
       });
 
-      (client as AuthenticatedSocket).user = payload;
-      console.log(`Client authenticated: ${payload.username} (${client.id})`);
+      const socket = client as AuthenticatedSocket;
+      socket.user = payload;
+
+      // Personal channel: lets the server reach every tab of this user
+      await socket.join(userChannel(payload.id));
+
+      if (this.presence.connect(payload.id, socket.id)) {
+        socket.broadcast.emit(ChatEvents.PRESENCE, {
+          userId: payload.id,
+          online: true,
+        });
+      }
+      socket.emit(ChatEvents.PRESENCE_SNAPSHOT, {
+        online: this.presence.onlineUserIds(),
+      });
+
+      this.logger.log(
+        `Client authenticated: ${payload.username} (${client.id})`,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Connection rejected for ${client.id}: ${errorMessage}`);
+      this.logger.warn(`Connection rejected for ${client.id}: ${errorMessage}`);
       client.disconnect();
     }
   }
 
-  handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+  async handleDisconnect(client: Socket) {
+    const user = (client as AuthenticatedSocket).user;
+    this.logger.log(`Client disconnected: ${client.id}`);
+    if (!user || !this.presence.disconnect(user.id, client.id)) return;
+
+    const lastSeenAt = new Date();
+    try {
+      await this.userRepository.touchLastSeen(user.id, lastSeenAt);
+    } catch (error) {
+      this.logger.warn(
+        `Could not store lastSeenAt for ${user.id}: ${String(error)}`,
+      );
+    }
+    this.server.emit(ChatEvents.PRESENCE, {
+      userId: user.id,
+      online: false,
+      lastSeenAt: lastSeenAt.toISOString(),
+    });
+  }
+
+  /** Leaves the chat room this socket is viewing, keeping its personal channel. */
+  private async leaveActiveRoom(client: AuthenticatedSocket) {
+    const current = client.data.roomId;
+    if (current) {
+      await client.leave(current);
+      client.data.roomId = undefined;
+    }
   }
 
   @SubscribeMessage(ChatEvents.JOIN)
@@ -92,13 +143,7 @@ export class ChatGateway
   ): Promise<void> {
     const { id: userId, username } = client.user;
 
-    const currentRooms = Array.from(client.rooms);
-
-    for (const room of currentRooms) {
-      if (room !== client.id) {
-        await client.leave(room);
-      }
-    }
+    await this.leaveActiveRoom(client);
 
     const hasAccess = await this.roomsService.joinRoom(userId, data.roomId);
 
@@ -110,7 +155,8 @@ export class ChatGateway
     }
 
     await client.join(data.roomId);
-    console.log(`${username} securely joined room ${data.roomId}`);
+    client.data.roomId = data.roomId;
+    this.logger.log(`${username} joined room ${data.roomId}`);
 
     client.to(data.roomId).emit(ChatEvents.USER_JOINED, {
       message: `User ${username} has joined room`,
@@ -121,11 +167,7 @@ export class ChatGateway
   async handleLeaveRoom(
     @ConnectedSocket() client: AuthenticatedSocket,
   ): Promise<void> {
-    for (const room of Array.from(client.rooms)) {
-      if (room !== client.id) {
-        await client.leave(room);
-      }
-    }
+    await this.leaveActiveRoom(client);
   }
 
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
@@ -153,7 +195,7 @@ export class ChatGateway
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      console.error('Error saving message:', errorMessage);
+      this.logger.error(`Error saving message: ${errorMessage}`);
       client.emit(ChatEvents.ERROR, { message: 'Failed to send message' });
     }
   }

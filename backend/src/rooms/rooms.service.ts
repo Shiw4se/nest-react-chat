@@ -11,6 +11,7 @@ import type { IRoomsRepository } from './rooms.repository.interface';
 import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { PresenceService } from '../realtime/presence.service';
 
 @Injectable()
 export class RoomsService {
@@ -18,6 +19,7 @@ export class RoomsService {
     @Inject(ROOMS_REPOSITORY)
     private readonly roomsRepository: IRoomsRepository,
     private readonly prisma: PrismaService,
+    private readonly presence: PresenceService,
   ) {}
 
   async create(userId: string, createRoomDto: CreateRoomDto) {
@@ -110,6 +112,8 @@ export class RoomsService {
         username: m.user.username,
         displayName: m.user.displayName,
         avatarUrl: m.user.avatarUrl,
+        lastSeenAt: m.user.lastSeenAt,
+        isOnline: this.presence.isOnline(m.user.id),
         joinedAt: m.joinedAt,
         isOwner: m.user.id === room.ownerId,
       })),

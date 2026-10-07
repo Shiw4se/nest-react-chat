@@ -20,7 +20,6 @@
     "members": "członków",
     "create_join_room": "+ Utwórz / Dołącz",
     "server_error": "Wystąpił błąd serwera",
-    "online": "online",
     "today": "Dzisiaj",
     "yesterday": "Wczoraj",
     "typing_one": "{{name}} pisze…",
@@ -182,5 +181,22 @@
     "avatar_type_error": "Wybierz obraz JPEG, PNG, WebP lub GIF",
     "avatar_size_error": "Obraz może mieć maksymalnie 5 MB",
     "bio_inline_hint": "Enter — zapisz · Shift+Enter — nowa linia · Esc — anuluj"
+  },
+  "presence": {
+    "online": "online",
+    "connecting": "łączenie…",
+    "recently": "ostatnio niedawno",
+    "just_now": "ostatnio przed chwilą",
+    "minutes_ago_one": "ostatnio {{count}} minutę temu",
+    "minutes_ago_few": "ostatnio {{count}} minuty temu",
+    "minutes_ago_many": "ostatnio {{count}} minut temu",
+    "minutes_ago_other": "ostatnio {{count}} minuty temu",
+    "today_at": "ostatnio dziś o {{time}}",
+    "yesterday_at": "ostatnio wczoraj o {{time}}",
+    "on_date": "ostatnio {{date}}",
+    "online_count_one": "{{count}} online",
+    "online_count_few": "{{count}} online",
+    "online_count_many": "{{count}} online",
+    "online_count_other": "{{count}} online"
   }
 }

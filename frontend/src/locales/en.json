@@ -20,7 +20,6 @@
     "members": "members",
     "create_join_room": "+ Create / Join Room",
     "server_error": "Something went wrong on the server",
-    "online": "online",
     "today": "Today",
     "yesterday": "Yesterday",
     "typing_one": "{{name}} is typing…",
@@ -180,5 +179,18 @@
     "avatar_type_error": "Choose a JPEG, PNG, WebP or GIF image",
     "avatar_size_error": "The image must be 5 MB or smaller",
     "bio_inline_hint": "Enter to save · Shift+Enter for a new line · Esc to cancel"
+  },
+  "presence": {
+    "online": "online",
+    "connecting": "connecting…",
+    "recently": "last seen recently",
+    "just_now": "last seen just now",
+    "minutes_ago_one": "last seen {{count}} minute ago",
+    "minutes_ago_other": "last seen {{count}} minutes ago",
+    "today_at": "last seen today at {{time}}",
+    "yesterday_at": "last seen yesterday at {{time}}",
+    "on_date": "last seen {{date}}",
+    "online_count_one": "{{count}} online",
+    "online_count_other": "{{count}} online"
   }
 }

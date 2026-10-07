@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../auth/user.repository';
+import { PresenceService } from '../realtime/presence.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import {
   AVATAR_MIME_TYPES,
@@ -16,6 +17,7 @@ export class UsersService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly avatarStorage: AvatarStorageService,
+    private readonly presence: PresenceService,
   ) {}
 
   async getProfile(userId: string) {
@@ -24,6 +26,7 @@ export class UsersService {
     const { _count, ...profile } = user;
     return {
       ...profile,
+      isOnline: this.presence.isOnline(profile.id),
       stats: {
         rooms: _count.rooms,
         ownedRooms: _count.ownedRooms,

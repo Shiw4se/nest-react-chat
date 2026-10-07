@@ -15,6 +15,8 @@ export interface RoomMember {
   username: string;
   displayName?: string | null;
   avatarUrl?: string | null;
+  lastSeenAt?: string | null;
+  isOnline?: boolean;
   joinedAt: string;
   isOwner: boolean;
 }

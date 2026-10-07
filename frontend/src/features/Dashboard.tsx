@@ -4,8 +4,10 @@ import { ChatRoom } from './ChatRoom';
 import { ProfilePanel } from './profile/ProfilePanel';
 import { useRoomStore } from '../store/useRoomStore';
 import { useUIStore } from '../store/useUIStore';
+import { useSocketConnection } from '../hooks/useSocketConnection';
 
 export const Dashboard: React.FC = () => {
+  useSocketConnection();
   const activeRoomId = useRoomStore((state) => state.activeRoomId);
   const profileUserId = useUIStore((state) => state.profileUserId);
   const closeProfile = useUIStore((state) => state.closeProfile);

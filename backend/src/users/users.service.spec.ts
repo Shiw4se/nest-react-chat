@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { UserRepository } from '../auth/user.repository';
 import { AvatarStorageService } from './avatar-storage.service';
+import { PresenceService } from '../realtime/presence.service';
 
 jest.mock('bcrypt');
 
@@ -32,6 +33,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: UserRepository, useValue: mockUserRepository },
         { provide: AvatarStorageService, useValue: mockAvatarStorage },
+        PresenceService,
       ],
     }).compile();
 

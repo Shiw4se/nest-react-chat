@@ -3,6 +3,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { RoomsService } from './rooms.service';
 import { ROOMS_REPOSITORY } from './rooms.tokens';
 import { PrismaService } from '../prisma/prisma.service';
+import { PresenceService } from '../realtime/presence.service';
 
 describe('RoomsService', () => {
   let service: RoomsService;
@@ -33,6 +34,7 @@ describe('RoomsService', () => {
           provide: ROOMS_REPOSITORY,
           useValue: mockRoomsRepository,
         },
+        PresenceService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,

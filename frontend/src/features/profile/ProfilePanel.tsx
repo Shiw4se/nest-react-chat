@@ -14,6 +14,8 @@ import type { UserProfile } from '../../types/user';
 import { EditProfileForm } from './EditProfileForm';
 import { ChangePasswordForm } from './ChangePasswordForm';
 import { InlineBio } from './InlineBio';
+import { PresenceLabel } from '../presence/PresenceLabel';
+import { usePresence } from '../../store/usePresenceStore';
 
 interface Props {
   userId: string;
@@ -35,6 +37,7 @@ export const ProfilePanel: React.FC<Props> = ({ userId, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [mode, setMode] = useState<Mode>('view');
   const panelRef = useFocusTrap(true, onClose);
+  const { isOnline } = usePresence(userId, { isOnline: profile?.isOnline });
 
   useEffect(() => {
     let cancelled = false;
@@ -179,11 +182,17 @@ export const ProfilePanel: React.FC<Props> = ({ userId, onClose }) => {
                   name={nameOf(profile)}
                   seed={profile.username}
                   src={profile.avatarUrl}
+                  online={isOnline}
                   size="xl"
                   className="shadow-xl"
                 />
                 <h3 className="mt-4 text-xl font-bold text-white break-all">{nameOf(profile)}</h3>
-                <p className="mt-0.5 text-sm text-sky-400">@{profile.username}</p>
+                <PresenceLabel
+                  userId={profile.id}
+                  isOnline={profile.isOnline}
+                  lastSeenAt={profile.lastSeenAt}
+                  className="mt-0.5 text-sm"
+                />
               </section>
 
               <dl className="border-t border-slate-700/70 py-2">

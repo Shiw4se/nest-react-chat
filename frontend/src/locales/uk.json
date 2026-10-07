@@ -20,7 +20,6 @@
     "members": "учасників",
     "create_join_room": "+ Створити / Приєднатися",
     "server_error": "На сервері сталася помилка",
-    "online": "онлайн",
     "today": "Сьогодні",
     "yesterday": "Вчора",
     "typing_one": "{{name}} друкує…",
@@ -182,5 +181,22 @@
     "avatar_type_error": "Оберіть зображення JPEG, PNG, WebP або GIF",
     "avatar_size_error": "Зображення має бути не більше 5 МБ",
     "bio_inline_hint": "Enter — зберегти · Shift+Enter — новий рядок · Esc — скасувати"
+  },
+  "presence": {
+    "online": "в мережі",
+    "connecting": "підключення…",
+    "recently": "був(ла) нещодавно",
+    "just_now": "був(ла) щойно",
+    "minutes_ago_one": "був(ла) {{count}} хвилину тому",
+    "minutes_ago_few": "був(ла) {{count}} хвилини тому",
+    "minutes_ago_many": "був(ла) {{count}} хвилин тому",
+    "minutes_ago_other": "був(ла) {{count}} хвилини тому",
+    "today_at": "був(ла) сьогодні о {{time}}",
+    "yesterday_at": "був(ла) вчора о {{time}}",
+    "on_date": "був(ла) {{date}}",
+    "online_count_one": "{{count}} у мережі",
+    "online_count_few": "{{count}} у мережі",
+    "online_count_many": "{{count}} у мережі",
+    "online_count_other": "{{count}} у мережі"
   }
 }

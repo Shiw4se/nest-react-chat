@@ -6,6 +6,9 @@ import { ChatGateway } from './chat.gateway';
 import { MessagesService } from '../messages/messages.service';
 import { RoomsService } from '../rooms/rooms.service';
 import { ChatEvents } from './enums/chat-events.enum';
+import { UserRepository } from '../auth/user.repository';
+import { PresenceService } from '../realtime/presence.service';
+import { RealtimeService } from '../realtime/realtime.service';
 
 describe('ChatGateway', () => {
   let gateway: ChatGateway;
@@ -26,6 +29,8 @@ describe('ChatGateway', () => {
     emit: jest.fn(),
   };
 
+  const mockUserRepository = { touchLastSeen: jest.fn() };
+
   const mockAuthenticatedSocket = {
     id: 'test-socket-id',
     user: { id: 'user-123', username: 'Andrew' },
@@ -39,6 +44,8 @@ describe('ChatGateway', () => {
     to: jest.fn().mockReturnThis(),
     emit: jest.fn(),
     disconnect: jest.fn(),
+    broadcast: { emit: jest.fn() },
+    data: {},
   } as any;
 
   beforeEach(async () => {
@@ -47,6 +54,9 @@ describe('ChatGateway', () => {
         ChatGateway,
         { provide: MessagesService, useValue: mockMessagesService },
         { provide: RoomsService, useValue: mockRoomsService },
+        { provide: UserRepository, useValue: mockUserRepository },
+        PresenceService,
+        RealtimeService,
         {
           provide: ConfigService,
           useValue: { get: jest.fn().mockReturnValue('test-secret') },
@@ -78,23 +88,50 @@ describe('ChatGateway', () => {
     expect(gateway).toBeDefined();
   });
 
-  describe('handleConnection / handleDisconnect', () => {
-    it('should log on connection', async () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      await gateway.handleConnection(mockAuthenticatedSocket);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Client authenticated'),
-      );
-      consoleSpy.mockRestore();
+  describe('presence', () => {
+    beforeEach(() => {
+      mockAuthenticatedSocket.data = {};
     });
 
-    it('should log on disconnection', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      gateway.handleDisconnect(mockAuthenticatedSocket);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Client disconnected'),
+    it('joins the personal channel and announces the user as online', async () => {
+      await gateway.handleConnection(mockAuthenticatedSocket);
+
+      expect(mockAuthenticatedSocket.join).toHaveBeenCalledWith(
+        'user:user-123',
       );
-      consoleSpy.mockRestore();
+      expect(mockAuthenticatedSocket.broadcast.emit).toHaveBeenCalledWith(
+        ChatEvents.PRESENCE,
+        { userId: 'user-123', online: true },
+      );
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(
+        ChatEvents.PRESENCE_SNAPSHOT,
+        { online: ['user-123'] },
+      );
+      await gateway.handleDisconnect(mockAuthenticatedSocket);
+    });
+
+    it('stores lastSeenAt and announces offline after the last socket', async () => {
+      await gateway.handleConnection(mockAuthenticatedSocket);
+      await gateway.handleDisconnect(mockAuthenticatedSocket);
+
+      expect(mockUserRepository.touchLastSeen).toHaveBeenCalledWith(
+        'user-123',
+        expect.any(Date),
+      );
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        ChatEvents.PRESENCE,
+        expect.objectContaining({ userId: 'user-123', online: false }),
+      );
+    });
+
+    it('rejects a connection without a token', async () => {
+      const anonymous = {
+        ...mockAuthenticatedSocket,
+        handshake: { auth: {}, headers: {} },
+        disconnect: jest.fn(),
+      };
+      await gateway.handleConnection(anonymous);
+      expect(anonymous.disconnect).toHaveBeenCalled();
     });
   });
 
@@ -102,13 +139,21 @@ describe('ChatGateway', () => {
     it('should leave old rooms, check access, join new room and emit "User Joined"', async () => {
       const data = { roomId: 'room-123' };
 
-      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'old-room']);
+      mockAuthenticatedSocket.rooms = new Set([
+        'test-socket-id',
+        'user:user-123',
+        'old-room',
+      ]);
+      mockAuthenticatedSocket.data = { roomId: 'old-room' };
 
       mockRoomsService.joinRoom.mockResolvedValue(true);
 
       await gateway.handleJoinRoom(data, mockAuthenticatedSocket);
 
       expect(mockAuthenticatedSocket.leave).toHaveBeenCalledWith('old-room');
+      expect(mockAuthenticatedSocket.leave).not.toHaveBeenCalledWith(
+        'user:user-123',
+      );
       expect(mockRoomsService.joinRoom).toHaveBeenCalledWith(
         'user-123',
         'room-123',

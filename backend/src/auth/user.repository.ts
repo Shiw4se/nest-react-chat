@@ -8,6 +8,7 @@ const PROFILE_SELECT = {
   displayName: true,
   bio: true,
   avatarUrl: true,
+  lastSeenAt: true,
   createdAt: true,
 } as const;
 
@@ -69,6 +70,13 @@ export class UserRepository {
       where: { id },
       data: { avatarUrl },
       select: PROFILE_SELECT,
+    });
+  }
+
+  async touchLastSeen(id: string, at: Date) {
+    await this.prisma.user.update({
+      where: { id },
+      data: { lastSeenAt: at },
     });
   }
 

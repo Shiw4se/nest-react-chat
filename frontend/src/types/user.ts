@@ -4,6 +4,8 @@ export interface UserProfile {
   displayName: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  lastSeenAt: string | null;
+  isOnline?: boolean;
   createdAt: string;
   stats: {
     rooms: number;

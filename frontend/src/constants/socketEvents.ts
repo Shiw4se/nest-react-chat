@@ -16,6 +16,8 @@ export const SOCKET_EVENTS = {
   // server -> client: domain errors (forbidden join, failed send) and
   // validation failures (Nest WsException payloads)
   ERROR: 'ERROR',
+  PRESENCE: 'presence',
+  PRESENCE_SNAPSHOT: 'presenceSnapshot',
   EXCEPTION: 'exception',
 } as const;
 

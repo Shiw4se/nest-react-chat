@@ -20,7 +20,6 @@
     "members": "メンバー",
     "create_join_room": "+ 作成 / 参加",
     "server_error": "サーバーでエラーが発生しました",
-    "online": "オンライン",
     "today": "今日",
     "yesterday": "昨日",
     "typing_one": "{{name}} が入力中…",
@@ -179,5 +178,16 @@
     "avatar_type_error": "JPEG・PNG・WebP・GIF 画像を選択してください",
     "avatar_size_error": "画像は 5 MB 以下にしてください",
     "bio_inline_hint": "Enter で保存 · Shift+Enter で改行 · Esc でキャンセル"
+  },
+  "presence": {
+    "online": "オンライン",
+    "connecting": "接続中…",
+    "recently": "最近オンライン",
+    "just_now": "たった今オンライン",
+    "minutes_ago_other": "{{count}} 分前にオンライン",
+    "today_at": "今日 {{time}} にオンライン",
+    "yesterday_at": "昨日 {{time}} にオンライン",
+    "on_date": "{{date}} にオンライン",
+    "online_count_other": "{{count}} 人がオンライン"
   }
 }
