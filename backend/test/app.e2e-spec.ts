@@ -1,25 +1,63 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { PrismaService } from '../src/prisma/prisma.service';
 
-describe('AppController (e2e)', () => {
+/**
+ * Boots the full application with Prisma mocked out, so the suite runs
+ * without a database. Covers routing, versioning, validation and auth guards.
+ */
+describe('App (e2e)', () => {
   let app: INestApplication<App>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    process.env.JWT_SECRET ??= 'e2e-secret';
+    process.env.DATABASE_URL ??= 'postgresql://u:p@localhost:5432/db';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue({ user: { findUnique: jest.fn().mockResolvedValue(null) } })
+      .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+    app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it('GET /v1/rooms/my without token returns 401', () => {
+    return request(app.getHttpServer()).get('/v1/rooms/my').expect(401);
+  });
+
+  it('POST /v1/auth/login with invalid body returns 400', () => {
     return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+      .post('/v1/auth/login')
+      .send({ username: 'ab', password: 'short' })
+      .expect(400);
+  });
+
+  it('POST /v1/auth/login with unknown user returns 401', () => {
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send({ username: 'nobody', password: 'Password1' })
+      .expect(401);
   });
 });

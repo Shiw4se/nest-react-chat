@@ -13,7 +13,9 @@ export class MessagesRepository {
         userId,
       },
       include: {
-        user: { select: { username: true } },
+        user: {
+          select: { username: true, displayName: true, avatarUrl: true },
+        },
       },
     });
   }
@@ -26,7 +28,9 @@ export class MessagesRepository {
       where: { roomId },
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { username: true } },
+        user: {
+          select: { username: true, displayName: true, avatarUrl: true },
+        },
       },
     });
 

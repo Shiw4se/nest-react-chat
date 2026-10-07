@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { RoomType } from '@prisma/client';
 import { RoomsRepository } from './rooms.repository';
+import type {
+  IRoomsRepository,
+  PublicRooms,
+} from './rooms.repository.interface';
 
-const PUBLIC_ROOMS_TTL_MS = 30_000; 
+const PUBLIC_ROOMS_TTL_MS = 30_000;
 
-type PublicRooms = Awaited<ReturnType<RoomsRepository['findPublicRooms']>>;
-
-
+/**
+ * Wraps RoomsRepository with a short in-memory cache for the public room list.
+ * Any write that can change that list (or its member counts) drops the cache.
+ */
 @Injectable()
-export class CachedRoomsRepository {
+export class CachedRoomsRepository implements IRoomsRepository {
   private cachedRooms: PublicRooms | null = null;
   private expiresAt = 0;
 
@@ -29,8 +34,18 @@ export class CachedRoomsRepository {
     this.expiresAt = 0;
   }
 
-  async create(ownerId: string, name: string, type: RoomType, inviteToken: string | null) {
-    const result = await this.repository.create(ownerId, name, type, inviteToken);
+  async create(
+    ownerId: string,
+    name: string,
+    type: RoomType,
+    inviteToken: string | null,
+  ) {
+    const result = await this.repository.create(
+      ownerId,
+      name,
+      type,
+      inviteToken,
+    );
     if (type === RoomType.PUBLIC) this.invalidatePublicCache();
     return result;
   }
@@ -51,11 +66,29 @@ export class CachedRoomsRepository {
     return this.repository.findMember(userId, roomId);
   }
 
+  async findMembers(roomId: string) {
+    return this.repository.findMembers(roomId);
+  }
+
   async updateToken(roomId: string, inviteToken: string) {
     return this.repository.updateToken(roomId, inviteToken);
   }
 
   async addMember(userId: string, roomId: string) {
-    return this.repository.addMember(userId, roomId);
+    const result = await this.repository.addMember(userId, roomId);
+    this.invalidatePublicCache();
+    return result;
+  }
+
+  async removeMember(userId: string, roomId: string) {
+    const result = await this.repository.removeMember(userId, roomId);
+    this.invalidatePublicCache();
+    return result;
+  }
+
+  async delete(roomId: string) {
+    const result = await this.repository.delete(roomId);
+    this.invalidatePublicCache();
+    return result;
   }
 }

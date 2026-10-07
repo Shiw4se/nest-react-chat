@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import sanitizeHtml = require('sanitize-html');
+import sanitizeHtml from 'sanitize-html';
 import { MessagesRepository } from './messages.repository';
 
 @Injectable()
@@ -11,7 +11,10 @@ export class MessagesService {
   constructor(private readonly messagesRepository: MessagesRepository) {}
 
   async createMessage(userId: string, roomId: string, text: string) {
-    const sanitized = sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
+    const sanitized = sanitizeHtml(text, {
+      allowedTags: [],
+      allowedAttributes: {},
+    });
     return this.messagesRepository.create(userId, roomId, sanitized);
   }
 

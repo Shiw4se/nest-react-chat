@@ -55,6 +55,8 @@ describe('AuthService', () => {
         id: 'user-id-123',
         username: 'andrew_test',
         password: 'hashed_password',
+        displayName: null,
+        avatarUrl: null,
       };
       mockUserRepository.findByUsername.mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
@@ -66,6 +68,8 @@ describe('AuthService', () => {
         user: {
           id: 'user-id-123',
           username: 'andrew_test',
+          displayName: null,
+          avatarUrl: null,
         },
       });
       expect(userRepository.findByUsername).toHaveBeenCalledWith('andrew_test');

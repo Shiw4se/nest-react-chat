@@ -13,8 +13,11 @@ enum RoomType {
 
 model User {
   id         String       @id @default(uuid())
-  username   String       @unique
-  password   String
+  username    String       @unique
+  password    String
+  displayName String?
+  bio         String?
+  avatarUrl   String?
   
   messages   Message[]
   rooms      RoomMember[] 
@@ -60,4 +63,6 @@ model Message {
 
   roomId    String
   room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
 }

@@ -7,8 +7,10 @@ import {
   OnGatewayDisconnect,
   OnGatewayInit,
   ConnectedSocket,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ChatEvents } from './enums/chat-events.enum';
@@ -23,6 +25,20 @@ import type { AuthenticatedSocket } from '../auth/interfaces/auth.interfaces';
 // CORS origin is set dynamically in afterInit() via ConfigService
 // so that process.env is read after dotenv has been loaded by ConfigModule
 @WebSocketGateway()
+// Global pipes from main.ts do not apply to gateways, so validation is attached here.
+// Invalid payloads are turned into a WsException, which Nest delivers to the client
+// as an `exception` event instead of crashing the handler.
+@UsePipes(
+  new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    exceptionFactory: (errors) =>
+      new WsException(
+        errors.flatMap((e) => Object.values(e.constraints ?? {})).join('; ') ||
+          'Validation failed',
+      ),
+  }),
+)
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
@@ -84,13 +100,10 @@ export class ChatGateway
       }
     }
 
-    const hasAccess = await this.roomsService.checkRoomAccess(
-      userId,
-      data.roomId,
-    );
+    const hasAccess = await this.roomsService.joinRoom(userId, data.roomId);
 
     if (!hasAccess) {
-      client.emit('ERROR', {
+      client.emit(ChatEvents.ERROR, {
         message: 'Forbidden: You are not a member of this room',
       });
       return;
@@ -104,6 +117,17 @@ export class ChatGateway
     });
   }
 
+  @SubscribeMessage(ChatEvents.LEAVE)
+  async handleLeaveRoom(
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ): Promise<void> {
+    for (const room of Array.from(client.rooms)) {
+      if (room !== client.id) {
+        await client.leave(room);
+      }
+    }
+  }
+
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
     @MessageBody() data: SendMessageDto,
@@ -112,7 +136,9 @@ export class ChatGateway
     const { id: userId } = client.user;
 
     if (!client.rooms.has(data.roomId)) {
-      client.emit('ERROR', { message: 'Forbidden: join the room first' });
+      client.emit(ChatEvents.ERROR, {
+        message: 'Forbidden: join the room first',
+      });
       return;
     }
 
@@ -128,7 +154,7 @@ export class ChatGateway
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       console.error('Error saving message:', errorMessage);
-      client.emit('ERROR', { message: 'Failed to send message' });
+      client.emit(ChatEvents.ERROR, { message: 'Failed to send message' });
     }
   }
 
@@ -151,7 +177,9 @@ export class ChatGateway
     @ConnectedSocket() client: AuthenticatedSocket,
   ) {
     if (!client.rooms.has(data.roomId)) {
-      client.emit('ERROR', { message: 'Forbidden: join the room first' });
+      client.emit(ChatEvents.ERROR, {
+        message: 'Forbidden: join the room first',
+      });
       return;
     }
 
@@ -166,7 +194,7 @@ export class ChatGateway
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to delete message';
-      client.emit('ERROR', { message: errorMessage });
+      client.emit(ChatEvents.ERROR, { message: errorMessage });
     }
   }
 }

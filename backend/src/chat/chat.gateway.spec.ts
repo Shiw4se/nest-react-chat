@@ -18,7 +18,7 @@ describe('ChatGateway', () => {
   };
 
   const mockRoomsService = {
-    checkRoomAccess: jest.fn(),
+    joinRoom: jest.fn(),
   };
 
   const mockServer = {
@@ -47,7 +47,10 @@ describe('ChatGateway', () => {
         ChatGateway,
         { provide: MessagesService, useValue: mockMessagesService },
         { provide: RoomsService, useValue: mockRoomsService },
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('test-secret') },
+        },
         {
           provide: JwtService,
           useValue: {
@@ -101,12 +104,12 @@ describe('ChatGateway', () => {
 
       mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'old-room']);
 
-      mockRoomsService.checkRoomAccess.mockResolvedValue(true);
+      mockRoomsService.joinRoom.mockResolvedValue(true);
 
       await gateway.handleJoinRoom(data, mockAuthenticatedSocket);
 
       expect(mockAuthenticatedSocket.leave).toHaveBeenCalledWith('old-room');
-      expect(mockRoomsService.checkRoomAccess).toHaveBeenCalledWith(
+      expect(mockRoomsService.joinRoom).toHaveBeenCalledWith(
         'user-123',
         'room-123',
       );
@@ -123,7 +126,7 @@ describe('ChatGateway', () => {
     it('should block access and emit ERROR if user is not in RoomMember table', async () => {
       const data = { roomId: 'room-123' };
 
-      mockRoomsService.checkRoomAccess.mockResolvedValue(false);
+      mockRoomsService.joinRoom.mockResolvedValue(false);
       mockAuthenticatedSocket.rooms = new Set(['test-socket-id']);
 
       await gateway.handleJoinRoom(data, mockAuthenticatedSocket);

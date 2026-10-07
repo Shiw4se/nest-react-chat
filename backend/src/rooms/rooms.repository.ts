@@ -6,7 +6,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class RoomsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(ownerId: string, name: string, type: RoomType, inviteToken: string | null) {
+  async create(
+    ownerId: string,
+    name: string,
+    type: RoomType,
+    inviteToken: string | null,
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const room = await tx.room.create({
         data: { name, type, inviteToken, ownerId },
@@ -48,6 +53,24 @@ export class RoomsRepository {
     });
   }
 
+  async findMembers(roomId: string) {
+    return this.prisma.roomMember.findMany({
+      where: { roomId },
+      select: {
+        joinedAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+      orderBy: { joinedAt: 'asc' },
+    });
+  }
+
   async updateToken(roomId: string, inviteToken: string) {
     return this.prisma.room.update({
       where: { id: roomId },
@@ -56,12 +79,20 @@ export class RoomsRepository {
   }
 
   async addMember(userId: string, roomId: string) {
-    const existing = await this.prisma.roomMember.findUnique({
+    // upsert is atomic, so concurrent joins cannot race into a unique violation
+    return this.prisma.roomMember.upsert({
       where: { userId_roomId: { userId, roomId } },
+      create: { userId, roomId },
+      update: {},
     });
-    if (existing) return existing;
-    return this.prisma.roomMember.create({
-      data: { userId, roomId },
-    });
+  }
+
+  async removeMember(userId: string, roomId: string) {
+    return this.prisma.roomMember.deleteMany({ where: { userId, roomId } });
+  }
+
+  async delete(roomId: string) {
+    // members and messages are removed by the cascade rules in the schema
+    return this.prisma.room.delete({ where: { id: roomId } });
   }
 }
