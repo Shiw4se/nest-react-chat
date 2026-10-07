@@ -1,4 +1,4 @@
-name: "CI/CD - Build, Test & Deploy"
+name: "CI - Lint, Build & Test"
 
 on:
   push:
@@ -31,44 +31,28 @@ jobs:
         run: cd backend && npm install
 
       - name: Generate Prisma client
-        run: cd backend && npx prisma generate      
-      
+        run: cd backend && npx prisma generate
+
+      - name: Lint Backend
+        run: cd backend && npx eslint "{src,test}/**/*.ts"
+
+      - name: Build Backend
+        run: cd backend && npm run build
+
       - name: Run Backend tests
         run: cd backend && npm test
 
+      - name: Run Backend e2e tests
+        run: cd backend && npm run test:e2e
+
       - name: Install Frontend dependencies
         run: cd frontend && npm install
-      
+
+      - name: Lint Frontend
+        run: cd frontend && npm run lint
+
+      - name: Build Frontend
+        run: cd frontend && npm run build
+
       - name: Run Frontend tests
         run: cd frontend && npm test
-
-  deploy:
-    name: "Deploy to AWS EC2"
-    needs: test 
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' 
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |  
-          
-            cd ~/nest-react-chat            
-           
-            git pull origin main
-            
-           
-            cd backend
-            npm install
-            npx prisma generate
-            npm run build
-           
-            pm2 restart chat-backend            
-          
-            cd ../frontend
-            npm install
-            npm run build
