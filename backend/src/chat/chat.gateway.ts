@@ -10,7 +10,12 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  Logger,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ChatEvents } from './enums/chat-events.enum';
@@ -19,6 +24,7 @@ import { SendMessageDto } from '../messages/dto/send-message.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { TypingDto } from './dto/typing.dto';
 import { DeleteMessageDto } from './dto/delete-message.dto';
+import { EditMessageDto } from './dto/edit-message.dto';
 import { RoomsService } from '../rooms/rooms.service';
 import { UserRepository } from '../auth/user.repository';
 import { PresenceService } from '../realtime/presence.service';
@@ -215,6 +221,7 @@ export class ChatGateway
         userId,
         data.roomId,
         data.message,
+        data.replyToId,
       );
 
       this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
@@ -223,7 +230,12 @@ export class ChatGateway
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Error saving message: ${errorMessage}`);
-      client.emit(ChatEvents.ERROR, { message: 'Failed to send message' });
+      client.emit(ChatEvents.ERROR, {
+        message:
+          error instanceof BadRequestException
+            ? errorMessage
+            : 'Failed to send message',
+      });
     }
   }
 
@@ -238,6 +250,39 @@ export class ChatGateway
       username,
       isTyping: data.isTyping,
     });
+  }
+
+  @SubscribeMessage(ChatEvents.EDIT_MESSAGE)
+  async handleEditMessage(
+    @MessageBody() data: EditMessageDto,
+    @ConnectedSocket() client: AuthenticatedSocket,
+  ) {
+    if (!client.rooms.has(data.roomId)) {
+      client.emit(ChatEvents.ERROR, {
+        message: 'Forbidden: join the room first',
+      });
+      return;
+    }
+
+    try {
+      const updated = await this.messagesService.editMessage(
+        data.messageId,
+        client.user.id,
+        data.roomId,
+        data.message,
+      );
+      this.server.to(data.roomId).emit(ChatEvents.MESSAGE_EDITED, updated);
+
+      // Refresh room previews only when the edited message is the latest one
+      const last = await this.roomsService.getLastMessage(data.roomId);
+      if (last?.id === updated.id) {
+        await this.notifyRoomActivity(data.roomId, null, last);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to edit message';
+      client.emit(ChatEvents.ERROR, { message: errorMessage });
+    }
   }
 
   @SubscribeMessage(ChatEvents.DELETE_MESSAGE)

@@ -63,6 +63,11 @@ model Message {
   seq       Int      @default(autoincrement())
   message   String
   createdAt DateTime @default(now())
+  editedAt  DateTime?
+
+  replyToId String?
+  replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("Replies")
 
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -8,6 +8,7 @@ import { WebSocketManager } from '../websockets/services/WebSocketManager';
 import { ChatInvoker } from '../websockets/services/ChatInvoker';
 import { DeleteMessageCommand } from '../websockets/commands/DeleteMessageCommand';
 import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
+import { EditMessageCommand } from '../websockets/commands/EditMessageCommand';
 import type { ChatMessagePayload } from '../types/message';
 
 /**
@@ -15,7 +16,7 @@ import type { ChatMessagePayload } from '../types/message';
  * useSocketConnection; this hook only joins/leaves rooms and listens to them.
  */
 export const useChatSocket = (user: UserData | null, roomId: string | null) => {
-  const { addMessage, setTyping, removeMessage } = useChatStore();
+  const { addMessage, setTyping, removeMessage, updateMessage } = useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [chatInvoker] = useState(() => new ChatInvoker());
@@ -50,11 +51,15 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     const handleDeleteMessage = ({ messageId }: { messageId: string }) => {
       removeMessage(messageId);
     };
+    const handleMessageEdited = (message: ChatMessage) => {
+      if (message.roomId === roomId) updateMessage(message);
+    };
 
     socket.on(SOCKET_EVENTS.CONNECT, join);
     socket.on(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
     socket.on(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
     socket.on(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
+    socket.on(SOCKET_EVENTS.MESSAGE_EDITED, handleMessageEdited);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -62,12 +67,18 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
       socket.off(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
       socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
+      socket.off(SOCKET_EVENTS.MESSAGE_EDITED, handleMessageEdited);
     };
-  }, [user, roomId, socket, addMessage, setTyping, removeMessage]);
+  }, [user, roomId, socket, addMessage, setTyping, removeMessage, updateMessage]);
 
   const sendMessage = useCallback(
     (payload: ChatMessagePayload) => {
-      const command = new SendMessageCommand(socket, payload.roomId, payload.message);
+      const command = new SendMessageCommand(
+        socket,
+        payload.roomId,
+        payload.message,
+        payload.replyToId,
+      );
       chatInvoker.executeCommand(command);
     },
     [socket, chatInvoker],
@@ -96,5 +107,15 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     [user, roomId, socket, chatInvoker],
   );
 
-  return { sendMessage, handleTyping, deleteMessage, chatInvoker };
+  const editMessage = useCallback(
+    (messageId: string, text: string, previousText: string) => {
+      if (!user || !roomId) return;
+      chatInvoker.executeCommand(
+        new EditMessageCommand(socket, roomId, messageId, text, previousText),
+      );
+    },
+    [user, roomId, socket, chatInvoker],
+  );
+
+  return { sendMessage, handleTyping, deleteMessage, editMessage, chatInvoker };
 };

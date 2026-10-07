@@ -16,6 +16,8 @@ interface ChatState {
   setHasMore: (status: boolean) => void;
   setTyping: (username: string, isTyping: boolean) => void;
   removeMessage: (messageId: string) => void;
+  /** Replaces an edited message and refreshes quotes of it */
+  updateMessage: (msg: ChatMessage) => void;
   /** Applies a profile change to every loaded message by that author. */
   updateAuthor: (
     userId: string,
@@ -51,7 +53,23 @@ export const useChatStore = create<ChatState>((set) => ({
 
   removeMessage: (messageId) =>
     set((state) => ({
-      messages: state.messages.filter((msg) => msg.id !== messageId),
+      messages: state.messages
+        .filter((msg) => msg.id !== messageId)
+        // The server nulls replyToId on delete; mirror it so quotes disappear now
+        .map((msg) =>
+          msg.replyToId === messageId ? { ...msg, replyToId: null, replyTo: null } : msg,
+        ),
+    })),
+
+  updateMessage: (updated) =>
+    set((state) => ({
+      messages: state.messages.map((msg) => {
+        if (msg.id === updated.id) return { ...msg, ...updated };
+        if (msg.replyTo?.id === updated.id) {
+          return { ...msg, replyTo: { ...msg.replyTo, message: updated.message } };
+        }
+        return msg;
+      }),
     })),
 
   updateAuthor: (userId, patch) =>

@@ -29,7 +29,15 @@
     "unread_count_one": "{{count}} nieprzeczytana wiadomość",
     "unread_count_few": "{{count}} nieprzeczytane wiadomości",
     "unread_count_many": "{{count}} nieprzeczytanych wiadomości",
-    "unread_count_other": "{{count}} nieprzeczytanych wiadomości"
+    "unread_count_other": "{{count}} nieprzeczytanych wiadomości",
+    "reply": "Odpowiedz",
+    "edit": "Edytuj",
+    "delete": "Usuń",
+    "edited": "edytowano",
+    "editing": "Edycja wiadomości",
+    "reply_to": "Odpowiedź dla {{name}}",
+    "save_edit": "Zapisz zmiany",
+    "reply_not_loaded": "Oryginał jest wyżej w historii"
   },
   "auth": {
     "create_account": "Utwórz konto",

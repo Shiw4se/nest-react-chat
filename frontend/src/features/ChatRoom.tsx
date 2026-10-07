@@ -2,16 +2,22 @@ import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { MessageBubble } from '../components/ui/MessageBubble';
 import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
+import { Composer, type ComposerMode } from './chat/components/Composer';
 import { useChatTour } from '../hooks/useChatTour';
 import { useChatFacade } from '../hooks/useChatFacade';
 import { useUIStore } from '../store/useUIStore';
 import { buildMessageRows } from '../utils/messageRows';
+import type { ChatMessage } from '../types/chat';
+
+const HIGHLIGHT_MS = 1600;
+
+const showError = (error?: string) => {
+  if (error) toast.error(error);
+};
 
 export const ChatRoom: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -24,32 +30,46 @@ export const ChatRoom: React.FC = () => {
     currentRoom,
     isLoadingMore,
     sendMessage,
+    editMessage,
     handleTyping,
     deleteMessage,
     loadMore,
   } = useChatFacade();
 
   const openProfile = useUIStore((s) => s.openProfile);
-  const [inputText, setInputText] = useState('');
+  // Reply/edit state is tied to the room it was started in
+  const [composer, setComposer] = useState<{ roomId: string | null; mode: ComposerMode }>({
+    roomId: null,
+    mode: null,
+  });
+  const composerMode = composer.roomId === activeRoomId ? composer.mode : null;
+  const setComposerMode = useCallback(
+    (mode: ComposerMode) => setComposer({ roomId: activeRoomId, mode }),
+    [activeRoomId],
+  );
+
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const oldScrollHeightRef = useRef<number | null>(null);
+  const prevLastIdRef = useRef<string | null>(null);
 
   const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
   useChatTour(!!user, user?.username);
 
-  // After older messages are prepended, keep the viewport anchored on the
-  // message the user was looking at; otherwise follow the newest message.
+  // Prepending older messages keeps the viewport on what the user was reading;
+  // a new last message scrolls to the bottom; edits and reactions do not scroll.
   useEffect(() => {
     const container = chatContainerRef.current;
     const oldScrollHeight = oldScrollHeightRef.current;
     if (oldScrollHeight !== null && container) {
       container.scrollTop = container.scrollHeight - oldScrollHeight;
       oldScrollHeightRef.current = null;
-    } else {
+    } else if (lastMessageId !== prevLastIdRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+    prevLastIdRef.current = lastMessageId;
   }, [messages, lastMessageId]);
 
   const rows = useMemo(
@@ -62,17 +82,45 @@ export const ChatRoom: React.FC = () => {
     [messages, t, i18n.language],
   );
 
-  const onSend = useCallback(() => {
-    const text = inputText.trim();
-    if (!text) return;
+  const handleSend = useCallback(
+    (text: string) => {
+      const replyToId = composerMode?.type === 'reply' ? composerMode.message.id : undefined;
+      const { success, error } = sendMessage(text, replyToId);
+      if (success) setComposerMode(null);
+      else showError(error);
+      return success;
+    },
+    [composerMode, sendMessage, setComposerMode],
+  );
 
-    const { success, error } = sendMessage(text);
-    if (success) {
-      setInputText('');
-    } else if (error) {
-      toast.error(error);
-    }
-  }, [inputText, sendMessage]);
+  const handleSaveEdit = useCallback(
+    (message: ChatMessage, text: string) => {
+      const { success, error } = editMessage(message.id, text, message.message);
+      if (success) setComposerMode(null);
+      else showError(error);
+      return success;
+    },
+    [editMessage, setComposerMode],
+  );
+
+  const handleEditLast = useCallback(() => {
+    const lastOwn = [...messages].reverse().find((m) => m.userId === user?.id);
+    if (lastOwn) setComposerMode({ type: 'edit', message: lastOwn });
+  }, [messages, user?.id, setComposerMode]);
+
+  const jumpToMessage = useCallback(
+    (messageId: string) => {
+      const el = document.getElementById(`msg-${messageId}`);
+      if (!el) {
+        toast(t('chat.reply_not_loaded'), { icon: '↑' });
+        return;
+      }
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightId(messageId);
+      window.setTimeout(() => setHighlightId((id) => (id === messageId ? null : id)), HIGHLIGHT_MS);
+    },
+    [t],
+  );
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -81,17 +129,6 @@ export const ChatRoom: React.FC = () => {
       loadMore();
     }
   };
-
-  const handleDelete = useCallback(
-    (id?: string) => {
-      if (!id) {
-        toast.error('Cannot delete a message that is still sending');
-        return;
-      }
-      deleteMessage(id);
-    },
-    [deleteMessage],
-  );
 
   if (!user) return null;
 
@@ -143,24 +180,33 @@ export const ChatRoom: React.FC = () => {
                   </span>
                 </div>
               ) : (
-                rows.map((row) =>
-                  row.kind === 'date' ? (
-                    <div key={row.key} className="flex justify-center my-4">
-                      <span className="text-[11px] font-medium text-slate-300 bg-slate-800/80 px-3 py-1 rounded-full shadow">
-                        {row.label}
-                      </span>
-                    </div>
-                  ) : (
+                rows.map((row) => {
+                  if (row.kind === 'date') {
+                    return (
+                      <div key={row.key} className="flex justify-center my-4">
+                        <span className="text-[11px] font-medium text-slate-300 bg-slate-800/80 px-3 py-1 rounded-full shadow">
+                          {row.label}
+                        </span>
+                      </div>
+                    );
+                  }
+                  const msg = row.message;
+                  const isMe = msg.userId === user.id;
+                  return (
                     <MessageBubble
                       key={row.key}
-                      message={row.message}
-                      isMe={row.message.user.username === user.username}
+                      message={msg}
+                      isMe={isMe}
                       showMeta={row.showMeta}
-                      onDelete={() => handleDelete(row.message.id)}
-                      onAuthorClick={() => openProfile(row.message.userId)}
+                      highlighted={highlightId === msg.id}
+                      onReply={() => setComposerMode({ type: 'reply', message: msg })}
+                      onEdit={isMe ? () => setComposerMode({ type: 'edit', message: msg }) : undefined}
+                      onDelete={isMe ? () => deleteMessage(msg.id) : undefined}
+                      onAuthorClick={() => openProfile(msg.userId)}
+                      onQuoteClick={jumpToMessage}
                     />
-                  ),
-                )
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
@@ -168,29 +214,14 @@ export const ChatRoom: React.FC = () => {
 
           <footer className="px-3 sm:px-4 py-3 bg-slate-800/90 border-t border-slate-700/60 backdrop-blur-md relative shrink-0">
             <TypingIndicator users={typingUsers} />
-            <div id="tour-input" className="flex gap-2 max-w-3xl mx-auto items-end pb-safe">
-              <Input
-                multiline
-                value={inputText}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                  setInputText(e.target.value);
-                  handleTyping();
-                }}
-                onEnterPress={onSend}
-                placeholder={t('chat.placeholder')}
-                className="flex-1 min-h-11 text-[15px] bg-slate-900/80 border border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl px-4 py-2.5"
-                aria-label={t('chat.message_input_label', 'Type a message')}
-              />
-              <Button
-                onClick={onSend}
-                disabled={!inputText.trim()}
-                className="h-11.5 w-11.5 p-0! rounded-full shrink-0"
-                aria-label={t('chat.send_button', 'Send message')}
-                title={t('chat.send')}
-              >
-                <Icon name="send" size={20} className="-ml-0.5" />
-              </Button>
-            </div>
+            <Composer
+              mode={composerMode}
+              onSend={handleSend}
+              onSaveEdit={handleSaveEdit}
+              onCancelMode={() => setComposerMode(null)}
+              onEditLast={handleEditLast}
+              onTyping={handleTyping}
+            />
           </footer>
         </>
       )}

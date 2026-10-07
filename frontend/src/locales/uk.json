@@ -29,7 +29,15 @@
     "unread_count_one": "{{count}} непрочитане повідомлення",
     "unread_count_few": "{{count}} непрочитані повідомлення",
     "unread_count_many": "{{count}} непрочитаних повідомлень",
-    "unread_count_other": "{{count}} непрочитаних повідомлень"
+    "unread_count_other": "{{count}} непрочитаних повідомлень",
+    "reply": "Відповісти",
+    "edit": "Редагувати",
+    "delete": "Видалити",
+    "edited": "ред.",
+    "editing": "Редагування",
+    "reply_to": "Відповідь {{name}}",
+    "save_edit": "Зберегти зміни",
+    "reply_not_loaded": "Оригінал вище в історії"
   },
   "auth": {
     "create_account": "Створити акаунт",

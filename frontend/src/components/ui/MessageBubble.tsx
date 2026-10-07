@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ChatMessage } from '../../types/chat';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
@@ -9,28 +10,75 @@ interface MessageBubbleProps {
   isMe: boolean;
   /** First message in a run from the same author: shows avatar and name */
   showMeta?: boolean;
+  /** Briefly highlighted after jumping to it from a reply */
+  highlighted?: boolean;
   onDelete?: () => void;
+  onEdit?: () => void;
+  onReply?: () => void;
   onAuthorClick?: () => void;
+  /** Scroll to the quoted message */
+  onQuoteClick?: (messageId: string) => void;
 }
+
+const ActionButton: React.FC<{
+  icon: React.ComponentProps<typeof Icon>['name'];
+  label: string;
+  danger?: boolean;
+  onClick: () => void;
+}> = ({ icon, label, danger = false, onClick }) => (
+  <button
+    type="button"
+    title={label}
+    aria-label={label}
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className={`p-1.5 rounded-full text-slate-400 hover:bg-slate-700/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/70 ${
+      danger ? 'hover:text-red-400' : 'hover:text-white'
+    }`}
+  >
+    <Icon name={icon} size={16} />
+  </button>
+);
 
 export const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
   isMe,
   showMeta = true,
+  highlighted = false,
   onDelete,
+  onEdit,
+  onReply,
   onAuthorClick,
+  onQuoteClick,
 }) => {
+  const { t } = useTranslation();
   const authorName = nameOf(message.user);
   const time = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
+  const quote = message.replyTo;
+
+  const actions = (
+    <div
+      className={`flex items-center gap-0.5 self-center opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity ${
+        isMe ? 'flex-row-reverse' : ''
+      }`}
+    >
+      {onReply && <ActionButton icon="reply" label={t('chat.reply')} onClick={onReply} />}
+      {onEdit && <ActionButton icon="edit" label={t('chat.edit')} onClick={onEdit} />}
+      {onDelete && <ActionButton icon="trash" label={t('chat.delete')} danger onClick={onDelete} />}
+    </div>
+  );
 
   return (
     <div
-      className={`flex items-end gap-2 group ${isMe ? 'justify-end' : 'justify-start'} ${
-        showMeta ? 'mt-3' : 'mt-0.5'
-      }`}
+      id={`msg-${message.id}`}
+      className={`flex items-end gap-2 group rounded-xl transition-colors duration-700 ${
+        isMe ? 'justify-end' : 'justify-start'
+      } ${showMeta ? 'mt-3' : 'mt-0.5'} ${highlighted ? 'bg-sky-500/15' : ''}`}
     >
       {!isMe && (
         <div className="w-8 shrink-0">
@@ -53,24 +101,11 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         </div>
       )}
 
-      {isMe && onDelete && (
-        <button
-          type="button"
-          title="Delete message"
-          aria-label="Delete message"
-          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-slate-500 hover:text-red-400 p-1.5 rounded-full hover:bg-slate-800"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete();
-          }}
-        >
-          <Icon name="trash" size={16} />
-        </button>
-      )}
+      {isMe && actions}
 
       <div
         data-testid="message-bubble"
+        onDoubleClick={onReply}
         className={`relative px-3.5 py-2 max-w-[78%] sm:max-w-md break-words shadow-sm ${
           isMe
             ? `bg-blue-600 text-white rounded-2xl ${showMeta ? 'rounded-br-md' : ''}`
@@ -86,19 +121,41 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             {authorName}
           </button>
         )}
+
+        {quote && (
+          <button
+            type="button"
+            onClick={() => onQuoteClick?.(quote.id)}
+            className={`block w-full text-left mb-1 rounded-md border-l-2 px-2 py-1 text-[13px] leading-snug ${
+              isMe
+                ? 'border-white/70 bg-white/10 hover:bg-white/15'
+                : 'border-sky-400 bg-sky-400/10 hover:bg-sky-400/15'
+            }`}
+          >
+            <span className={`block font-semibold text-xs ${isMe ? 'text-white' : 'text-sky-300'}`}>
+              {nameOf(quote.user)}
+            </span>
+            <span className={`block truncate ${isMe ? 'text-blue-100' : 'text-slate-300'}`}>
+              {quote.message}
+            </span>
+          </button>
+        )}
+
         <p className="text-[15px] leading-snug whitespace-pre-wrap">
           {message.message}
-          <span className="inline-block w-12" aria-hidden="true" />
+          <span className={`inline-block ${message.editedAt ? 'w-20' : 'w-12'}`} aria-hidden="true" />
         </p>
-        <time
-          dateTime={message.createdAt}
-          className={`absolute bottom-1 right-2.5 text-[10px] ${
+        <span
+          className={`absolute bottom-1 right-2.5 text-[10px] flex gap-1 ${
             isMe ? 'text-blue-200/80' : 'text-slate-400'
           }`}
         >
-          {time}
-        </time>
+          {message.editedAt && <span>{t('chat.edited')}</span>}
+          <time dateTime={message.createdAt}>{time}</time>
+        </span>
       </div>
+
+      {!isMe && actions}
     </div>
   );
 };

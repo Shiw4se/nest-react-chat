@@ -13,6 +13,11 @@ export class MessageBuilder {
     return this;
   }
 
+  setReplyTo(messageId: string | undefined): this {
+    if (messageId) this.payload.replyToId = messageId;
+    return this;
+  }
+
   build(): ChatMessagePayload {
     if (!this.payload.roomId || !this.payload.message) {
       throw new Error('MessageBuilder: Room ID and message are required fields');

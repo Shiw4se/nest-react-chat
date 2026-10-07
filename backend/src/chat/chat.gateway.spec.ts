@@ -18,6 +18,7 @@ describe('ChatGateway', () => {
   const mockMessagesService = {
     createMessage: jest.fn(),
     deleteMessage: jest.fn(),
+    editMessage: jest.fn(),
   };
 
   const mockRoomsService = {
@@ -207,6 +208,7 @@ describe('ChatGateway', () => {
         'user-123',
         'room-123',
         'Hello logic!',
+        undefined,
       );
 
       expect(mockServer.to).toHaveBeenCalledWith('room-123');
@@ -257,6 +259,51 @@ describe('ChatGateway', () => {
         mockAuthenticatedSocket,
       );
       expect(mockRoomsService.markRead).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleEditMessage', () => {
+    it('broadcasts the edited message to the room', async () => {
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
+      const updated = { id: 'm1', message: 'fixed', editedAt: new Date() };
+      mockMessagesService.editMessage.mockResolvedValue(updated);
+      mockRoomsService.getLastMessage.mockResolvedValue({ id: 'other' });
+
+      await gateway.handleEditMessage(
+        { roomId: 'room-123', messageId: 'm1', message: 'fixed' },
+        mockAuthenticatedSocket,
+      );
+
+      expect(mockMessagesService.editMessage).toHaveBeenCalledWith(
+        'm1',
+        'user-123',
+        'room-123',
+        'fixed',
+      );
+      expect(mockServer.to).toHaveBeenCalledWith('room-123');
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        ChatEvents.MESSAGE_EDITED,
+        updated,
+      );
+    });
+
+    it('reports errors to the sender only', async () => {
+      mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
+      mockMessagesService.editMessage.mockRejectedValue(
+        new Error('You can only edit your own messages'),
+      );
+
+      await gateway.handleEditMessage(
+        { roomId: 'room-123', messageId: 'm1', message: 'x' },
+        mockAuthenticatedSocket,
+      );
+
+      expect(mockAuthenticatedSocket.emit).toHaveBeenCalledWith(
+        ChatEvents.ERROR,
+        {
+          message: 'You can only edit your own messages',
+        },
+      );
     });
   });
 });

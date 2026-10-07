@@ -27,7 +27,15 @@
     "you": "You",
     "no_messages_short": "No messages yet",
     "unread_count_one": "{{count}} unread message",
-    "unread_count_other": "{{count}} unread messages"
+    "unread_count_other": "{{count}} unread messages",
+    "reply": "Reply",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "edited",
+    "editing": "Editing message",
+    "reply_to": "Reply to {{name}}",
+    "save_edit": "Save changes",
+    "reply_not_loaded": "The original message is further up in the history"
   },
   "auth": {
     "create_account": "Create Account",

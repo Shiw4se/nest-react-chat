@@ -10,17 +10,20 @@ export class SendMessageCommand implements ICommand {
   private socket: Socket;
   private roomId: string;
   private text: string;
+  private replyToId?: string;
 
-  constructor(socket: Socket, roomId: string, text: string) {
+  constructor(socket: Socket, roomId: string, text: string, replyToId?: string) {
     this.socket = socket;
     this.roomId = roomId;
     this.text = text;
+    this.replyToId = replyToId;
   }
 
   execute(): void {
     this.socket.emit(SOCKET_EVENTS.SEND_MESSAGE, {
       roomId: this.roomId,
       message: this.text,
+      ...(this.replyToId && { replyToId: this.replyToId }),
     });
     this.socket.emit(SOCKET_EVENTS.TYPING, {
       roomId: this.roomId,

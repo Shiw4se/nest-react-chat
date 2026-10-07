@@ -7,6 +7,8 @@ export enum ChatEvents {
   TYPING = 'typing',
   USER_TYPING = 'userTyping',
   DELETE_MESSAGE = 'deleteMessage',
+  EDIT_MESSAGE = 'editMessage',
+  MESSAGE_EDITED = 'messageEdited',
   ERROR = 'ERROR',
   PRESENCE = 'presence',
   MARK_READ = 'markRead',
