@@ -123,6 +123,13 @@ npm install
 npm run dev
 ```
 
+Fill the database with demo users, rooms and messages (optional, safe to re-run):
+
+```bash
+cd backend
+npm run db:seed           # accounts: demo, alex, maria, sam, yuki — password Demo1234
+```
+
 Open http://localhost:5173. The Vite dev server proxies `/auth` and `/socket.io` to the backend.
 
 Uploaded avatars are cropped to 256×256 WebP and stored in `backend/uploads` (set `UPLOADS_DIR` to change it). They are served at `/uploads/...` by the backend.

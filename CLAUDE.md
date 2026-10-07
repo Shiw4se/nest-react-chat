@@ -22,6 +22,7 @@ npx prisma generate     # Regenerate Prisma client after schema changes
 npx prisma migrate dev  # Run migrations in development
 npm run db:start        # Local PostgreSQL (embedded binaries, data in backend/.pgdata)
 npm run db:stop         # Stop it; db:reset wipes the data directory
+npm run db:seed         # Demo users/rooms/messages via ts-node (idempotent); db:seed:prod runs the built dist/seed/seed.js
 ```
 
 The local database comes from the `embedded-postgres` dev dependency via `scripts/local-db.mjs`; it listens on 127.0.0.1:5432 as postgres/postgres, database `chat`. On Windows, start it from a normal terminal: when postgres is spawned from a sandboxed shell its child processes fail with "could not reserve shared memory region" (error 487).
@@ -137,6 +138,8 @@ S3_ENDPOINT= S3_REGION= S3_BUCKET= S3_ACCESS_KEY_ID= S3_SECRET_ACCESS_KEY= S3_PU
 ```
 VITE_API_URL=
 VITE_WS_URL=
+VITE_DEMO_ACCOUNTS=   # e.g. demo,alex,maria — enables the one-click demo login
+VITE_DEMO_PASSWORD=   # password of the seeded demo accounts
 ```
 
 ## Testing

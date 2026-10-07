@@ -21,7 +21,9 @@
     "db:stop": "node scripts/local-db.mjs stop",
     "db:status": "node scripts/local-db.mjs status",
     "db:reset": "node scripts/local-db.mjs reset",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:seed": "ts-node --transpile-only src/seed/seed.ts",
+    "db:seed:prod": "node dist/seed/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",

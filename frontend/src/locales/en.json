@@ -227,5 +227,12 @@
     "system": "system",
     "light": "light",
     "dark": "dark"
+  },
+  "demo": {
+    "title": "Try the demo",
+    "text": "Sample rooms, messages, photos and reactions are ready. No sign-up needed.",
+    "button": "Log in as the demo user",
+    "signing_in": "Signing in…",
+    "second_window": "To chat with yourself, open another window as"
   }
 }

@@ -237,5 +237,12 @@
     "system": "systemowy",
     "light": "jasny",
     "dark": "ciemny"
+  },
+  "demo": {
+    "title": "Wypróbuj demo",
+    "text": "Przykładowe pokoje, wiadomości, zdjęcia i reakcje są gotowe. Bez rejestracji.",
+    "button": "Zaloguj jako użytkownik demo",
+    "signing_in": "Logowanie…",
+    "second_window": "Aby pisać sam ze sobą, otwórz drugie okno jako"
   }
 }

@@ -6,6 +6,7 @@ import { Icon } from '../components/ui/Icon';
 import { LanguageSwitcher } from './chat/components/LanguageSwitcher';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { useJoinForm } from '../hooks/useJoinForm';
+import { DemoLogin } from './DemoLogin';
 
 export const JoinForm: React.FC = () => {
   const { t } = useTranslation();
@@ -23,6 +24,8 @@ export const JoinForm: React.FC = () => {
           </h1>
           <p className="mt-1 text-sm text-slate-400">{t('auth.tagline', 'Fast, simple chat rooms.')}</p>
         </div>
+
+        {!isRegisterMode && <DemoLogin />}
 
         <form
           onSubmit={handleSubmit}
