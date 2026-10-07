@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/useAuthStore';
+import { getApiErrorMessage } from '../api/axios';
 
 export const useJoinForm = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
@@ -34,8 +35,12 @@ export const useJoinForm = () => {
       } else {
         await login(formData.username, formData.password);
       }
-    } catch {
-      const errorMessage = isRegisterMode ? t('auth.registration_failed') : t('auth.login_failed');
+    } catch (err) {
+      // Validation errors (400) carry a precise reason from the backend; show it
+      // instead of the generic text so the user knows what to fix.
+      const serverMessage = getApiErrorMessage(err);
+      const errorMessage =
+        serverMessage || (isRegisterMode ? t('auth.registration_failed') : t('auth.login_failed'));
       setError(errorMessage);
       toast.error(errorMessage);
     }

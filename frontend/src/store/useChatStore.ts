@@ -16,6 +16,11 @@ interface ChatState {
   setHasMore: (status: boolean) => void;
   setTyping: (username: string, isTyping: boolean) => void;
   removeMessage: (messageId: string) => void;
+  /** Applies a profile change to every loaded message by that author. */
+  updateAuthor: (
+    userId: string,
+    patch: { displayName?: string | null; avatarUrl?: string | null },
+  ) => void;
   clearMessages: () => void;
 }
 
@@ -47,6 +52,13 @@ export const useChatStore = create<ChatState>((set) => ({
   removeMessage: (messageId) =>
     set((state) => ({
       messages: state.messages.filter((msg) => msg.id !== messageId),
+    })),
+
+  updateAuthor: (userId, patch) =>
+    set((state) => ({
+      messages: state.messages.map((m) =>
+        m.userId === userId ? { ...m, user: { ...m.user, ...patch } } : m,
+      ),
     })),
 
   clearMessages: () => set({ messages: [], typingUsers: [], hasMore: true }),

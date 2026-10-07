@@ -32,7 +32,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
       e.preventDefault();
       if (onEnterPress) onEnterPress();
     }
-    if (props.onKeyDown) props.onKeyDown(e as any);
+    if (props.onKeyDown) props.onKeyDown(e as React.KeyboardEvent<HTMLInputElement & HTMLTextAreaElement>);
   };
 
   const baseClasses = `
@@ -49,6 +49,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
   `.replace(/\s+/g, ' ').trim();
 
   if (props.multiline) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { multiline, onEnterPress, className: _className, ...textareaProps } = props;
     return (
       <textarea
@@ -61,6 +62,7 @@ export const Input: React.FC<PolymorphicInputProps> = (props) => {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { multiline, onEnterPress: _, className: _className, ...inputProps } = props;
   return (
     <input

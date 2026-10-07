@@ -24,7 +24,7 @@ export const useChatHistory = (room: string | null) => {
     };
 
     fetchHistory();
-  }, [room]);
+  }, [room, clearMessages, setMessages, setHasMore]);
 
   const loadMore = useCallback(async () => {
     if (!room || isLoadingMore || !hasMore || messages.length === 0) return;

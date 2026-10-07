@@ -5,7 +5,7 @@ export class WebSocketManager {
   public socket: Socket;
 
   private constructor() {
-    const baseURL = import.meta.env.VITE_API_URL;
+    const baseURL = import.meta.env.VITE_WS_URL || import.meta.env.VITE_API_URL;
 
     this.socket = io(baseURL, {
       autoConnect: false,
@@ -18,6 +18,12 @@ export class WebSocketManager {
       WebSocketManager.instance = new WebSocketManager();
     }
     return WebSocketManager.instance;
+  }
+
+  /** Attaches the JWT to the handshake and connects if not connected yet. */
+  public connectWithToken(token: string | null): void {
+    this.socket.auth = { token };
+    this.connect();
   }
 
   public connect(): void {

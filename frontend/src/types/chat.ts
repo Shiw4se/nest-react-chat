@@ -1,7 +1,8 @@
 export interface ChatMessage {
-  id?: string;
+  id: string;
   message: string;
-  room: string;
-  user: { username: string };
-  createdAt?: string;
+  roomId: string;
+  userId: string;
+  user: { username: string; displayName?: string | null; avatarUrl?: string | null };
+  createdAt: string;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useChatStore } from '../store/useChatStore';
 import { DISCONNECT_REASONS, SOCKET_EVENTS } from '../constants/socketEvents';
@@ -10,27 +10,27 @@ import { ChatInvoker } from '../websockets/services/ChatInvoker';
 import { DeleteMessageCommand } from '../websockets/commands/DeleteMessageCommand';
 import { SendMessageCommand } from '../websockets/commands/SendMessageCommand';
 import type { ChatMessagePayload } from '../types/message';
+import i18n from '../config/i18n';
 
 export const useChatSocket = (user: UserData | null, roomId: string | null) => {
   const { addMessage, setTyping, setIsConnected, setIsReconnecting, removeMessage } =
     useChatStore();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const chatInvoker = useRef(new ChatInvoker()).current;
+  const [chatInvoker] = useState(() => new ChatInvoker());
   const socket = WebSocketManager.getInstance().socket;
 
   useEffect(() => {
-    if (!user || !roomId) return;
-
-    const token = useAuthStore.getState().token;
-    socket.auth = { token };
-
-    if (!socket.connected) {
-      socket.connect();
+    if (!user || !roomId) {
+      // Left the room (or logged out): stop receiving that room's events.
+      if (socket.connected) socket.emit(SOCKET_EVENTS.LEAVE);
+      return;
     }
 
+    WebSocketManager.getInstance().connectWithToken(useAuthStore.getState().token);
+
     if (socket.connected) {
-      socket.emit(SOCKET_EVENTS.JOIN, { roomId, username: user.username });
+      socket.emit(SOCKET_EVENTS.JOIN, { roomId });
     }
   }, [user, roomId, socket]);
 
@@ -40,7 +40,7 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     const handleConnect = () => {
       setIsConnected(true);
       setIsReconnecting(false);
-      socket.emit(SOCKET_EVENTS.JOIN, { roomId, username: user.username });
+      socket.emit(SOCKET_EVENTS.JOIN, { roomId });
     };
 
     const handleDisconnect = (reason: string) => {
@@ -53,6 +53,11 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     const handleConnectError = () => {
       setIsConnected(false);
       setIsReconnecting(true);
+    };
+
+    const handleServerError = (data: { message?: string } | string) => {
+      const message = typeof data === 'string' ? data : data?.message;
+      toast.error(message || i18n.t('chat.server_error'));
     };
 
     const handleUserJoined = (data: { message: string }) => {
@@ -78,6 +83,8 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
     socket.on(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
     socket.on(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
     socket.on(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
+    socket.on(SOCKET_EVENTS.ERROR, handleServerError);
+    socket.on(SOCKET_EVENTS.EXCEPTION, handleServerError);
 
     return () => {
       socket.off(SOCKET_EVENTS.CONNECT, handleConnect);
@@ -87,6 +94,8 @@ export const useChatSocket = (user: UserData | null, roomId: string | null) => {
       socket.off(SOCKET_EVENTS.NEW_MESSAGE, handleNewMessage);
       socket.off(SOCKET_EVENTS.USER_TYPING, handleUserTyping);
       socket.off(SOCKET_EVENTS.DELETE_MESSAGE, handleDeleteMessage);
+      socket.off(SOCKET_EVENTS.ERROR, handleServerError);
+      socket.off(SOCKET_EVENTS.EXCEPTION, handleServerError);
     };
   }, [
     user,

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ChatMessage } from '../../types/chat';
 import { useChatStore } from '../useChatStore';
 
 describe('useChatStore', () => {
@@ -12,9 +13,16 @@ describe('useChatStore', () => {
   });
 
   it('should add a new message to the state', () => {
-    const mockMessage = { message: 'Hello team', user: { username: 'Andrew' } };
+    const mockMessage: ChatMessage = {
+      id: 'msg-1',
+      message: 'Hello team',
+      roomId: 'room-1',
+      userId: 'user-1',
+      user: { username: 'Andrew' },
+      createdAt: '2026-01-01T10:00:00.000Z',
+    };
 
-    useChatStore.getState().addMessage(mockMessage as any);
+    useChatStore.getState().addMessage(mockMessage);
 
     const state = useChatStore.getState();
     expect(state.messages).toHaveLength(1);

@@ -3,10 +3,14 @@ export interface AuthResponse {
   user: {
     id: string;
     username: string;
+    displayName?: string | null;
+    avatarUrl?: string | null;
   };
 }
 
 export interface UserData {
   id: string;
   username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
 }

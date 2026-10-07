@@ -6,6 +6,11 @@ interface UIState {
   setHasSeenTour: (userId: string) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+
+  /** User whose profile panel is open, or null when closed. Not persisted. */
+  profileUserId: string | null;
+  openProfile: (userId: string) => void;
+  closeProfile: () => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -16,12 +21,20 @@ export const useUIStore = create<UIState>()(
         set((state) => ({
           hasSeenTour: { ...state.hasSeenTour, [userId]: true },
         })),
-      
+
       isSidebarOpen: true,
       toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+
+      profileUserId: null,
+      openProfile: (userId) => set({ profileUserId: userId }),
+      closeProfile: () => set({ profileUserId: null }),
     }),
     {
       name: 'ui-storage',
+      partialize: (state) => ({
+        hasSeenTour: state.hasSeenTour,
+        isSidebarOpen: state.isSidebarOpen,
+      }),
     },
   ),
 );

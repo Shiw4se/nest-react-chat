@@ -29,6 +29,7 @@ export class SendMessageCommand implements ICommand {
   }
 
   undo(): void {
-    console.log(`Undo action: attempt to delete message "${this.text}"`);
+    // Sent messages are undone through DeleteMessageCommand once the server
+    // has assigned an id; nothing to roll back locally.
   }
 }

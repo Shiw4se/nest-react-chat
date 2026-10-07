@@ -4,6 +4,7 @@ export const SOCKET_EVENTS = {
   CONNECT_ERROR: 'connect_error',
 
   JOIN: 'join',
+  LEAVE: 'leave',
   USER_JOINED: 'userJoined',
   SEND_MESSAGE: 'sendMessage',
   NEW_MESSAGE: 'newMessage',
@@ -11,6 +12,11 @@ export const SOCKET_EVENTS = {
   USER_TYPING: 'userTyping',
 
   DELETE_MESSAGE: 'deleteMessage',
+
+  // server -> client: domain errors (forbidden join, failed send) and
+  // validation failures (Nest WsException payloads)
+  ERROR: 'ERROR',
+  EXCEPTION: 'exception',
 } as const;
 
 export const DISCONNECT_REASONS = {

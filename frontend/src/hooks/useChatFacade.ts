@@ -45,8 +45,9 @@ export const useChatFacade = () => {
           socketSend(payload);
         });
         return { success: true };
-      } catch (error: any) {
-        return { success: false, error: error.message as string };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Invalid message';
+        return { success: false, error: message };
       }
     },
     [activeRoomId, socketSend, validator],

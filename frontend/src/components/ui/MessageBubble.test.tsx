@@ -1,12 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
+import type { ChatMessage } from '../../types/chat';
 import { MessageBubble } from './MessageBubble';
 
 describe('MessageBubble Component', () => {
-  const mockMsg = { message: 'Test message content', user: { username: 'Alice' } };
+  const mockMsg: ChatMessage = {
+    id: 'msg-1',
+    message: 'Test message content',
+    roomId: 'room-1',
+    userId: 'user-1',
+    user: { username: 'Alice' },
+    createdAt: '2026-01-01T10:00:00.000Z',
+  };
 
   it('renders an incoming message correctly', () => {
-    render(<MessageBubble message={mockMsg as any} isMe={false} />);
+    render(<MessageBubble message={mockMsg} isMe={false} />);
 
     expect(screen.getByText('Test message content')).toBeInTheDocument();
 
@@ -15,7 +23,7 @@ describe('MessageBubble Component', () => {
   });
 
   it('renders an outgoing message correctly (isMe=true)', () => {
-    render(<MessageBubble message={mockMsg as any} isMe={true} />);
+    render(<MessageBubble message={mockMsg} isMe={true} />);
 
     const bubble = screen.getByTestId('message-bubble');
     expect(bubble.className).toContain('bg-blue-600');
