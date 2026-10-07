@@ -204,5 +204,17 @@
     "yesterday_at": "昨日 {{time}} にオンライン",
     "on_date": "{{date}} にオンライン",
     "online_count_other": "{{count}} 人がオンライン"
+  },
+  "attachment": {
+    "attach": "画像を添付",
+    "send_photo": "写真を送信",
+    "caption_placeholder": "キャプションを追加…",
+    "photo": "写真",
+    "upload_error": "画像を送信できませんでした",
+    "type_error": "JPEG・PNG・WebP・GIF 画像を選択してください",
+    "size_error": "画像は 10 MB 以下にしてください",
+    "drop_here": "ドロップして画像を送信",
+    "viewer": "画像ビューア",
+    "open_original": "元の画像を開く"
   }
 }

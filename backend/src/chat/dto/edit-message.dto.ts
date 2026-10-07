@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class EditMessageDto {
   @IsUUID('4', { message: 'roomId must be a valid UUID' })
@@ -7,8 +7,8 @@ export class EditMessageDto {
   @IsUUID('4', { message: 'messageId must be a valid UUID' })
   messageId: string;
 
+  // May be empty for a photo caption; MessagesService rejects empty text messages
   @IsString()
-  @IsNotEmpty()
   @MaxLength(10000)
   message: string;
 }

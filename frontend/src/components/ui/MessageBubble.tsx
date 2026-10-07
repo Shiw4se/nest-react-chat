@@ -6,6 +6,7 @@ import { Icon } from './Icon';
 import { nameOf } from '../../utils/displayName';
 import { groupReactions } from '../../utils/reactions';
 import { ReactionPicker } from './ReactionPicker';
+import { mediaUrl } from '../../utils/mediaUrl';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -21,6 +22,8 @@ interface MessageBubbleProps {
   /** Scroll to the quoted message */
   onQuoteClick?: (messageId: string) => void;
   onReact?: (emoji: string) => void;
+  /** Open the attached image full screen */
+  onImageClick?: (src: string) => void;
   currentUserId?: string;
 }
 
@@ -57,6 +60,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   onAuthorClick,
   onQuoteClick,
   onReact,
+  onImageClick,
   currentUserId,
 }) => {
   const { t } = useTranslation();
@@ -67,6 +71,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   });
   const quote = message.replyTo;
   const reactionGroups = groupReactions(message.reactions, currentUserId);
+  const imageSrc = mediaUrl(message.attachmentUrl);
+  const hasCaption = message.message.length > 0;
+  // Bubble width follows the image (up to 320px) so captions wrap under it
+  const imageWidth = message.attachmentWidth ? Math.min(message.attachmentWidth, 320) : 320;
 
   const actions = (
     <div
@@ -144,7 +152,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               {nameOf(quote.user)}
             </span>
             <span className={`block truncate ${isMe ? 'text-blue-100' : 'text-slate-300'}`}>
-              {quote.message}
+              {quote.attachmentUrl ? `🖼 ${quote.message || t('attachment.photo')}` : quote.message}
             </span>
           </button>
         )}
@@ -161,15 +169,50 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
             </span>
           );
           const hasReactions = reactionGroups.length > 0;
+          // Photo without caption or reactions: the time floats over the image
+          const timeOverImage = !!imageSrc && !hasCaption && !hasReactions;
           return (
             <>
-              <p className="text-[15px] leading-snug whitespace-pre-wrap">
-                {message.message}
-                {/* Reserve room for the time that floats in the last line */}
-                {!hasReactions && (
-                  <span className={`inline-block ${message.editedAt ? 'w-20' : 'w-12'}`} aria-hidden="true" />
-                )}
-              </p>
+              {imageSrc && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageClick?.(imageSrc);
+                  }}
+                  aria-label={t('attachment.photo')}
+                  className={`relative block -mx-2 overflow-hidden rounded-xl bg-black/20 ${hasCaption || hasReactions ? 'mb-1.5' : '-mb-0.5'}`}
+                  style={{ width: imageWidth, maxWidth: 'calc(100% + 1rem)' }}
+                >
+                  <img
+                    src={imageSrc}
+                    alt=""
+                    loading="lazy"
+                    width={message.attachmentWidth ?? undefined}
+                    height={message.attachmentHeight ?? undefined}
+                    style={
+                      message.attachmentWidth && message.attachmentHeight
+                        ? { aspectRatio: `${message.attachmentWidth} / ${message.attachmentHeight}` }
+                        : undefined
+                    }
+                    className="block w-full h-auto max-h-[420px] object-cover"
+                  />
+                  {timeOverImage && (
+                    <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/55 px-1.5 py-0.5 [&_*]:text-white">
+                      {meta}
+                    </span>
+                  )}
+                </button>
+              )}
+              {(hasCaption || !imageSrc) && (
+                <p className="text-[15px] leading-snug whitespace-pre-wrap" style={imageSrc ? { maxWidth: imageWidth } : undefined}>
+                  {message.message}
+                  {/* Reserve room for the time that floats in the last line */}
+                  {!hasReactions && (
+                    <span className={`inline-block ${message.editedAt ? 'w-20' : 'w-12'}`} aria-hidden="true" />
+                  )}
+                </p>
+              )}
               {hasReactions ? (
                 // With reactions the time sits at the end of the reaction row
                 <div className="flex flex-wrap items-end gap-1 mt-1.5 mb-0.5" data-testid="reactions">
@@ -199,7 +242,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
                   ))}
                   <span className="ml-auto pl-2">{meta}</span>
                 </div>
-              ) : (
+              ) : timeOverImage ? null : (
                 <span className="absolute bottom-1 right-2.5">{meta}</span>
               )}
             </>

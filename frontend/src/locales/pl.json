@@ -219,5 +219,17 @@
     "online_count_few": "{{count}} online",
     "online_count_many": "{{count}} online",
     "online_count_other": "{{count}} online"
+  },
+  "attachment": {
+    "attach": "Załącz obraz",
+    "send_photo": "Wyślij zdjęcie",
+    "caption_placeholder": "Dodaj podpis…",
+    "photo": "Zdjęcie",
+    "upload_error": "Nie udało się wysłać obrazu",
+    "type_error": "Wybierz obraz JPEG, PNG, WebP lub GIF",
+    "size_error": "Obraz może mieć maksymalnie 10 MB",
+    "drop_here": "Upuść obraz, aby go wysłać",
+    "viewer": "Podgląd obrazu",
+    "open_original": "Otwórz oryginał"
   }
 }

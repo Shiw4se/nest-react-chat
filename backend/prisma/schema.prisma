@@ -66,6 +66,11 @@ model Message {
   createdAt DateTime @default(now())
   editedAt  DateTime?
 
+  /// Optional image; the text is then a caption and may be empty
+  attachmentUrl    String?
+  attachmentWidth  Int?
+  attachmentHeight Int?
+
   replyToId String?
   replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies   Message[] @relation("Replies")

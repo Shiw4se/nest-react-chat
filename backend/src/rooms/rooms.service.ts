@@ -14,6 +14,7 @@ import { CreateRoomDto } from './dto/create-room.dto';
 import { PresenceService } from '../realtime/presence.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { ChatEvents } from '../chat/enums/chat-events.enum';
+import { ImageStorageService } from '../storage/image-storage.service';
 
 @Injectable()
 export class RoomsService {
@@ -23,6 +24,7 @@ export class RoomsService {
     private readonly prisma: PrismaService,
     private readonly presence: PresenceService,
     private readonly realtime: RealtimeService,
+    private readonly images: ImageStorageService,
   ) {}
 
   async create(userId: string, createRoomDto: CreateRoomDto) {
@@ -146,15 +148,43 @@ export class RoomsService {
     if (!room) throw new NotFoundException('Room not found');
     if (room.ownerId !== userId)
       throw new ForbiddenException('Only the owner can delete the room');
-    // Collect members first: the cascade removes the membership rows
-    const memberIds = await this.roomsRepository.findMemberIds(roomId);
+    // Collect members and files first: the cascade removes those rows
+    const [memberIds, attachmentUrls] = await Promise.all([
+      this.roomsRepository.findMemberIds(roomId),
+      this.roomsRepository.findAttachmentUrls(roomId),
+    ]);
     await this.roomsRepository.delete(roomId);
+    // Best effort: a missing file must not fail the deletion
+    await Promise.allSettled(
+      attachmentUrls.map((url) => this.images.remove(url)),
+    );
     this.realtime.toUsers(memberIds, ChatEvents.ROOM_REMOVED, {
       roomId,
       roomName: room.name,
       deletedBy: userId,
     });
     return { message: 'Room deleted' };
+  }
+
+  async isMember(userId: string, roomId: string): Promise<boolean> {
+    return !!(await this.roomsRepository.findMember(userId, roomId));
+  }
+
+  /**
+   * Tells every member (in any room or tab) what changed, for unread badges
+   * and previews. senderId null = refresh only (edit/delete), no unread bump.
+   */
+  async notifyActivity(
+    roomId: string,
+    senderId: string | null,
+    lastMessage: unknown,
+  ) {
+    const memberIds = await this.roomsRepository.findMemberIds(roomId);
+    this.realtime.toUsers(memberIds, ChatEvents.ROOM_ACTIVITY, {
+      roomId,
+      senderId,
+      lastMessage,
+    });
   }
 
   getMemberIds(roomId: string) {

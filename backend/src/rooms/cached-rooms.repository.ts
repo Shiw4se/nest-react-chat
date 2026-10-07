@@ -78,6 +78,10 @@ export class CachedRoomsRepository implements IRoomsRepository {
     return this.repository.markRead(userId, roomId);
   }
 
+  async findAttachmentUrls(roomId: string) {
+    return this.repository.findAttachmentUrls(roomId);
+  }
+
   async findLastMessage(roomId: string) {
     return this.repository.findLastMessage(roomId);
   }

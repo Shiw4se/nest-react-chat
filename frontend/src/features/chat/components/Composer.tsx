@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Icon } from '../../../components/ui/Icon';
 import { nameOf } from '../../../utils/displayName';
 import type { ChatMessage } from '../../../types/chat';
+import { firstImage, IMAGE_TYPES } from '../../../utils/imageFile';
 
 export type ComposerMode =
   | { type: 'reply'; message: ChatMessage }
@@ -18,6 +19,8 @@ interface Props {
   /** ↑ in an empty field edits the user's last message, like Telegram */
   onEditLast: () => void;
   onTyping: () => void;
+  /** An image was chosen, pasted or dropped */
+  onPickFile?: (file: File) => void;
 }
 
 const MAX_HEIGHT = 140;
@@ -29,10 +32,12 @@ export const Composer: React.FC<Props> = ({
   onCancelMode,
   onEditLast,
   onTyping,
+  onPickFile,
 }) => {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Entering edit mode loads the original text; any mode change focuses the field
   const modeKey = mode ? `${mode.type}:${mode.message.id}` : '';
@@ -66,7 +71,8 @@ export const Composer: React.FC<Props> = ({
 
   const submit = () => {
     const value = text.trim();
-    if (!value) return;
+    const isPhotoEdit = mode?.type === 'edit' && !!mode.message.attachmentUrl;
+    if (!value && !isPhotoEdit) return;
     const ok = mode?.type === 'edit' ? onSaveEdit(mode.message, value) : onSend(value);
     if (ok) setText('');
   };
@@ -108,6 +114,31 @@ export const Composer: React.FC<Props> = ({
       )}
 
       <div id="tour-input" className="flex gap-2 items-end">
+        {onPickFile && mode?.type !== 'edit' && (
+          <>
+            <Button
+              variant="icon"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label={t('attachment.attach')}
+              title={t('attachment.attach')}
+              className="h-11! w-11! shrink-0"
+            >
+              <Icon name="paperclip" size={20} />
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={IMAGE_TYPES.join(',')}
+              className="hidden"
+              data-testid="attach-input"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (file) onPickFile(file);
+              }}
+            />
+          </>
+        )}
         <textarea
           ref={textareaRef}
           value={text}
@@ -117,13 +148,20 @@ export const Composer: React.FC<Props> = ({
             onTyping();
           }}
           onKeyDown={handleKeyDown}
+          onPaste={(e) => {
+            const image = firstImage(e.clipboardData?.files);
+            if (image && onPickFile) {
+              e.preventDefault();
+              onPickFile(image);
+            }
+          }}
           placeholder={t('chat.placeholder')}
           aria-label={t('chat.message_input_label', 'Type a message')}
           className="flex-1 min-h-11 resize-none overflow-y-auto text-[15px] leading-snug bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-500 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 rounded-2xl px-4 py-2.5 transition-colors"
         />
         <Button
           onClick={submit}
-          disabled={!text.trim()}
+          disabled={!text.trim() && !(mode?.type === 'edit' && mode.message.attachmentUrl)}
           className="h-11.5 w-11.5 p-0! rounded-full shrink-0"
           aria-label={mode?.type === 'edit' ? t('chat.save_edit') : t('chat.send_button', 'Send message')}
           title={mode?.type === 'edit' ? t('chat.save_edit') : t('chat.send')}

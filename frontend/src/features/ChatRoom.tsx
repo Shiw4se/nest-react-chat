@@ -7,6 +7,9 @@ import { MessageBubble } from '../components/ui/MessageBubble';
 import { ChatHeader } from './chat/components/ChatHeader';
 import { TypingIndicator } from './chat/components/TypingIndicator';
 import { Composer, type ComposerMode } from './chat/components/Composer';
+import { AttachmentDialog } from './chat/components/AttachmentDialog';
+import { Lightbox } from '../components/ui/Lightbox';
+import { firstImage, imageFileError } from '../utils/imageFile';
 import { useChatTour } from '../hooks/useChatTour';
 import { useChatFacade } from '../hooks/useChatFacade';
 import { useUIStore } from '../store/useUIStore';
@@ -50,6 +53,10 @@ export const ChatRoom: React.FC = () => {
   );
 
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; caption?: string } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragDepthRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const oldScrollHeightRef = useRef<number | null>(null);
@@ -96,7 +103,9 @@ export const ChatRoom: React.FC = () => {
 
   const handleSaveEdit = useCallback(
     (message: ChatMessage, text: string) => {
-      const { success, error } = editMessage(message.id, text, message.message);
+      const { success, error } = editMessage(message.id, text, message.message, {
+        allowEmpty: !!message.attachmentUrl,
+      });
       if (success) setComposerMode(null);
       else showError(error);
       return success;
@@ -122,6 +131,41 @@ export const ChatRoom: React.FC = () => {
     },
     [t],
   );
+
+  const pickFile = useCallback(
+    (file: File) => {
+      const error = imageFileError(file);
+      if (error) {
+        toast.error(t(error));
+        return;
+      }
+      setPendingFile(file);
+    },
+    [t],
+  );
+
+  // Drag & drop anywhere over the chat; the depth counter ignores child enter/leave noise
+  const dragHandlers = {
+    onDragEnter: (e: React.DragEvent) => {
+      if (!e.dataTransfer.types.includes('Files')) return;
+      dragDepthRef.current += 1;
+      setIsDragging(true);
+    },
+    onDragOver: (e: React.DragEvent) => {
+      if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+    },
+    onDragLeave: () => {
+      dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+      if (dragDepthRef.current === 0) setIsDragging(false);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      dragDepthRef.current = 0;
+      setIsDragging(false);
+      const image = firstImage(e.dataTransfer.files);
+      if (image) pickFile(image);
+    },
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
@@ -153,7 +197,13 @@ export const ChatRoom: React.FC = () => {
           </div>
         </div>
       ) : (
-        <>
+        <div className="relative flex-1 flex flex-col min-h-0" {...dragHandlers}>
+          {isDragging && (
+            <div className="absolute inset-3 z-30 rounded-2xl border-2 border-dashed border-sky-400 bg-slate-900/80 flex flex-col items-center justify-center gap-3 text-sky-300 pointer-events-none">
+              <Icon name="image" size={40} />
+              <p className="text-base font-medium">{t('attachment.drop_here')}</p>
+            </div>
+          )}
           <main
             id="tour-messages"
             ref={chatContainerRef}
@@ -206,6 +256,7 @@ export const ChatRoom: React.FC = () => {
                       onAuthorClick={() => openProfile(msg.userId)}
                       onQuoteClick={jumpToMessage}
                       onReact={(emoji) => toggleReaction(msg.id, emoji)}
+                      onImageClick={(src) => setLightbox({ src, caption: msg.message })}
                       currentUserId={user.id}
                     />
                   );
@@ -224,9 +275,27 @@ export const ChatRoom: React.FC = () => {
               onCancelMode={() => setComposerMode(null)}
               onEditLast={handleEditLast}
               onTyping={handleTyping}
+              onPickFile={pickFile}
             />
           </footer>
-        </>
+        </div>
+      )}
+
+      {pendingFile && activeRoomId && (
+        <AttachmentDialog
+          roomId={activeRoomId}
+          file={pendingFile}
+          replyTo={composerMode?.type === 'reply' ? composerMode.message : null}
+          onClose={() => setPendingFile(null)}
+          onSent={() => {
+            setPendingFile(null);
+            if (composerMode?.type === 'reply') setComposerMode(null);
+          }}
+        />
+      )}
+
+      {lightbox && (
+        <Lightbox src={lightbox.src} caption={lightbox.caption} onClose={() => setLightbox(null)} />
       )}
     </div>
   );

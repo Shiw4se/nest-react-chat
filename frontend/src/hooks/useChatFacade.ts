@@ -65,9 +65,15 @@ export const useChatFacade = () => {
   );
 
   const editMessage = useCallback(
-    (messageId: string, text: string, previousText: string): { success: boolean; error?: string } => {
+    (
+      messageId: string,
+      text: string,
+      previousText: string,
+      options: { allowEmpty?: boolean } = {},
+    ): { success: boolean; error?: string } => {
       try {
-        validator.validate(text);
+        // A photo may lose its caption; text messages go through the validators
+        if (!(options.allowEmpty && text === '')) validator.validate(text);
         if (text.length > 2000) return { success: false, error: 'Message is too long' };
         if (text !== previousText) socketEdit(messageId, text, previousText);
         return { success: true };

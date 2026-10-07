@@ -27,6 +27,7 @@ describe('ChatGateway', () => {
     markRead: jest.fn(),
     getMemberIds: jest.fn().mockResolvedValue(['user-123', 'user-456']),
     getLastMessage: jest.fn(),
+    notifyActivity: jest.fn(),
   };
 
   const mockServer = {
@@ -235,8 +236,6 @@ describe('ChatGateway', () => {
     });
 
     it('notifies every member about a new message', async () => {
-      const realtime = (gateway as any).realtime as RealtimeService;
-      const toUsers = jest.spyOn(realtime, 'toUsers').mockImplementation();
       mockAuthenticatedSocket.rooms = new Set(['test-socket-id', 'room-123']);
       const saved = { id: 'm1', message: 'hi', roomId: 'room-123' };
       mockMessagesService.createMessage.mockResolvedValue(saved);
@@ -246,10 +245,10 @@ describe('ChatGateway', () => {
         mockAuthenticatedSocket,
       );
 
-      expect(toUsers).toHaveBeenCalledWith(
-        ['user-123', 'user-456'],
-        ChatEvents.ROOM_ACTIVITY,
-        { roomId: 'room-123', senderId: 'user-123', lastMessage: saved },
+      expect(mockRoomsService.notifyActivity).toHaveBeenCalledWith(
+        'room-123',
+        'user-123',
+        saved,
       );
     });
 

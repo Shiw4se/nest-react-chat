@@ -209,5 +209,17 @@
     "on_date": "last seen {{date}}",
     "online_count_one": "{{count}} online",
     "online_count_other": "{{count}} online"
+  },
+  "attachment": {
+    "attach": "Attach image",
+    "send_photo": "Send photo",
+    "caption_placeholder": "Add a caption…",
+    "photo": "Photo",
+    "upload_error": "Failed to send the image",
+    "type_error": "Choose a JPEG, PNG, WebP or GIF image",
+    "size_error": "Images must be 10 MB or smaller",
+    "drop_here": "Drop an image to send it",
+    "viewer": "Image viewer",
+    "open_original": "Open original"
   }
 }

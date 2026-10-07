@@ -71,6 +71,7 @@ REST routes are prefixed with `/v1`.
 | PATCH | `/rooms/:roomId/invite-token` | Regenerate the invite token |
 | POST | `/rooms/:roomId/invite-user` | Invite a user directly |
 | GET | `/messages/:roomId` | Paginated message history |
+| POST | `/messages/:roomId/attachments` | Send an image (multipart `file`, optional `caption`, `replyToId`) |
 
 WebSocket events:
 

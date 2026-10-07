@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma, RoomType } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 /** Fields shown as the room's last-message preview */
 export const MESSAGE_PREVIEW_SELECT = {
   id: true,
   message: true,
+  attachmentUrl: true,
   createdAt: true,
   userId: true,
   user: { select: { username: true, displayName: true } },
 } satisfies Prisma.MessageSelect;
-import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RoomsRepository {
@@ -87,6 +88,14 @@ export class RoomsRepository {
       where: { userId, roomId },
       data: { lastReadAt: new Date() },
     });
+  }
+
+  async findAttachmentUrls(roomId: string): Promise<string[]> {
+    const rows = await this.prisma.message.findMany({
+      where: { roomId, attachmentUrl: { not: null } },
+      select: { attachmentUrl: true },
+    });
+    return rows.map((r) => r.attachmentUrl!);
   }
 
   async findLastMessage(roomId: string) {

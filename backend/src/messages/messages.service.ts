@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import sanitizeHtml from 'sanitize-html';
 import { MessagesRepository } from './messages.repository';
+import { ImageStorageService } from '../storage/image-storage.service';
 
 @Injectable()
 export class MessagesService {
-  constructor(private readonly messagesRepository: MessagesRepository) {}
+  constructor(
+    private readonly messagesRepository: MessagesRepository,
+    private readonly images: ImageStorageService,
+  ) {}
 
   private sanitize(text: string) {
     return sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
@@ -21,19 +25,49 @@ export class MessagesService {
     text: string,
     replyToId?: string,
   ) {
-    if (replyToId) {
-      const original = await this.messagesRepository.findById(replyToId);
-      // Never let a reply quote a message from another room
-      if (!original || original.roomId !== roomId) {
-        throw new BadRequestException('Cannot reply to that message');
-      }
-    }
+    await this.assertReplyTarget(roomId, replyToId);
     return this.messagesRepository.create(
       userId,
       roomId,
       this.sanitize(text),
       replyToId,
     );
+  }
+
+  /** Never let a reply quote a message from another room */
+  private async assertReplyTarget(roomId: string, replyToId?: string) {
+    if (!replyToId) return;
+    const original = await this.messagesRepository.findById(replyToId);
+    if (!original || original.roomId !== roomId) {
+      throw new BadRequestException('Cannot reply to that message');
+    }
+  }
+
+  async createImageMessage(
+    userId: string,
+    roomId: string,
+    file: Express.Multer.File | undefined,
+    caption = '',
+    replyToId?: string,
+  ) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    this.images.assertImageType(file.mimetype);
+    await this.assertReplyTarget(roomId, replyToId);
+
+    const image = await this.images.saveAttachment(userId, file.buffer);
+    try {
+      return await this.messagesRepository.createWithAttachment(
+        userId,
+        roomId,
+        this.sanitize(caption).trim(),
+        image,
+        replyToId,
+      );
+    } catch (error) {
+      // Do not leave an orphaned file behind if the message was not saved
+      await this.images.remove(image.url);
+      throw error;
+    }
   }
 
   async editMessage(
@@ -50,7 +84,10 @@ export class MessagesService {
       throw new ForbiddenException('You can only edit your own messages');
     }
     const sanitized = this.sanitize(text).trim();
-    if (!sanitized) throw new BadRequestException('Message cannot be empty');
+    // A photo may lose its caption; a text message may not become empty
+    if (!sanitized && !message.attachmentUrl) {
+      throw new BadRequestException('Message cannot be empty');
+    }
     return this.messagesRepository.updateText(messageId, sanitized);
   }
 
@@ -87,6 +124,7 @@ export class MessagesService {
     }
 
     await this.messagesRepository.delete(messageId);
+    await this.images.remove(message.attachmentUrl);
 
     return messageId;
   }

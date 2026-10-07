@@ -189,20 +189,6 @@ export class ChatGateway
     await this.roomsService.markRead(client.user.id, data.roomId);
   }
 
-  /** Tells every member (in any room or tab) what changed, for unread badges and previews. */
-  private async notifyRoomActivity(
-    roomId: string,
-    senderId: string | null,
-    lastMessage: unknown,
-  ) {
-    const memberIds = await this.roomsService.getMemberIds(roomId);
-    this.realtime.toUsers(memberIds, ChatEvents.ROOM_ACTIVITY, {
-      roomId,
-      senderId,
-      lastMessage,
-    });
-  }
-
   @SubscribeMessage(ChatEvents.SEND_MESSAGE)
   async handleMessage(
     @MessageBody() data: SendMessageDto,
@@ -226,7 +212,7 @@ export class ChatGateway
       );
 
       this.server.to(data.roomId).emit(ChatEvents.NEW_MESSAGE, savedMessage);
-      await this.notifyRoomActivity(data.roomId, userId, savedMessage);
+      await this.roomsService.notifyActivity(data.roomId, userId, savedMessage);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -277,7 +263,7 @@ export class ChatGateway
       // Refresh room previews only when the edited message is the latest one
       const last = await this.roomsService.getLastMessage(data.roomId);
       if (last?.id === updated.id) {
-        await this.notifyRoomActivity(data.roomId, null, last);
+        await this.roomsService.notifyActivity(data.roomId, null, last);
       }
     } catch (error) {
       const errorMessage =
@@ -338,7 +324,7 @@ export class ChatGateway
         .emit(ChatEvents.DELETE_MESSAGE, { messageId: data.messageId });
       // The deleted message may have been the preview; senderId null = no unread bump
       const lastMessage = await this.roomsService.getLastMessage(data.roomId);
-      await this.notifyRoomActivity(data.roomId, null, lastMessage);
+      await this.roomsService.notifyActivity(data.roomId, null, lastMessage);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to delete message';

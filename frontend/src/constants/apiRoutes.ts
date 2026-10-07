@@ -11,6 +11,7 @@ export const API_ROUTES = {
   },
   MESSAGES: {
     GET_ROOM_HISTORY: (room: string) => `/messages/${room}`,
+    ATTACHMENTS: (roomId: string) => `/messages/${roomId}/attachments`,
   },
   ROOMS: {
     MY: '/rooms/my',

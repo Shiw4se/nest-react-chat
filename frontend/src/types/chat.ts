@@ -1,6 +1,7 @@
 export interface ReplyPreview {
   id: string;
   message: string;
+  attachmentUrl?: string | null;
   userId: string;
   user: { username: string; displayName?: string | null };
 }
@@ -21,4 +22,7 @@ export interface ChatMessage {
   replyToId?: string | null;
   replyTo?: ReplyPreview | null;
   reactions?: Reaction[];
+  attachmentUrl?: string | null;
+  attachmentWidth?: number | null;
+  attachmentHeight?: number | null;
 }

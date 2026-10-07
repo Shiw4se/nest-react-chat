@@ -17,6 +17,7 @@ export const MESSAGE_INCLUDE = {
     select: {
       id: true,
       message: true,
+      attachmentUrl: true,
       userId: true,
       user: { select: { username: true, displayName: true } },
     },
@@ -56,6 +57,27 @@ export class MessagesRepository {
     });
 
     return messages.reverse();
+  }
+
+  async createWithAttachment(
+    userId: string,
+    roomId: string,
+    caption: string,
+    image: { url: string; width: number; height: number },
+    replyToId?: string,
+  ) {
+    return this.prisma.message.create({
+      data: {
+        message: caption,
+        roomId,
+        userId,
+        replyToId,
+        attachmentUrl: image.url,
+        attachmentWidth: image.width,
+        attachmentHeight: image.height,
+      },
+      include: MESSAGE_INCLUDE,
+    });
   }
 
   async findById(id: string) {

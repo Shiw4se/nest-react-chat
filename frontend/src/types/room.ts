@@ -1,6 +1,7 @@
 export interface MessagePreview {
   id: string;
   message: string;
+  attachmentUrl?: string | null;
   createdAt: string;
   userId: string;
   user: { username: string; displayName?: string | null };

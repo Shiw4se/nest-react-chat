@@ -219,5 +219,17 @@
     "online_count_few": "{{count}} у мережі",
     "online_count_many": "{{count}} у мережі",
     "online_count_other": "{{count}} у мережі"
+  },
+  "attachment": {
+    "attach": "Прикріпити зображення",
+    "send_photo": "Надіслати фото",
+    "caption_placeholder": "Додайте підпис…",
+    "photo": "Фото",
+    "upload_error": "Не вдалося надіслати зображення",
+    "type_error": "Оберіть зображення JPEG, PNG, WebP або GIF",
+    "size_error": "Зображення має бути не більше 10 МБ",
+    "drop_here": "Відпустіть, щоб надіслати зображення",
+    "viewer": "Перегляд зображення",
+    "open_original": "Відкрити оригінал"
   }
 }

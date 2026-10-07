@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PresenceService } from '../realtime/presence.service';
 import { RealtimeService } from '../realtime/realtime.service';
 import { ChatEvents } from '../chat/enums/chat-events.enum';
+import { ImageStorageService } from '../storage/image-storage.service';
 
 describe('RoomsService', () => {
   let service: RoomsService;
@@ -19,12 +20,14 @@ describe('RoomsService', () => {
     findMember: jest.fn(),
     findMembers: jest.fn(),
     findMemberIds: jest.fn(),
+    findAttachmentUrls: jest.fn().mockResolvedValue([]),
     addMember: jest.fn(),
     removeMember: jest.fn(),
     delete: jest.fn(),
   };
 
   const mockRealtime = { toUser: jest.fn(), toUsers: jest.fn() };
+  const mockImages = { remove: jest.fn() };
 
   const mockPrismaService = {
     user: { findUnique: jest.fn() },
@@ -41,6 +44,7 @@ describe('RoomsService', () => {
         },
         PresenceService,
         { provide: RealtimeService, useValue: mockRealtime },
+        { provide: ImageStorageService, useValue: mockImages },
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -94,8 +98,15 @@ describe('RoomsService', () => {
       });
 
       mockRoomsRepository.findMemberIds.mockResolvedValue(['owner', 'u1']);
+      mockRoomsRepository.findAttachmentUrls.mockResolvedValue([
+        '/uploads/attachments/a.webp',
+      ]);
 
       await service.deleteRoom('owner', 'room-1');
+
+      expect(mockImages.remove).toHaveBeenCalledWith(
+        '/uploads/attachments/a.webp',
+      );
 
       expect(mockRoomsRepository.delete).toHaveBeenCalledWith('room-1');
       expect(mockRealtime.toUsers).toHaveBeenCalledWith(

@@ -34,7 +34,8 @@ export const RoomListItem: React.FC<Props> = ({
       ? t('chat.you')
       : nameOf(last.user)
     : '';
-  const preview = last?.message.replace(/\s+/g, ' ').trim() ?? '';
+  const text = last?.message.replace(/\s+/g, ' ').trim() ?? '';
+  const preview = last?.attachmentUrl ? `🖼 ${text || t('attachment.photo')}` : text;
 
   return (
     <button
